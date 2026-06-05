@@ -31,7 +31,10 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   );
 
   const storedUser = typeof window !== 'undefined' ? localStorage.getItem('eleva_user') : null;
-  const loggedUser = storedUser ? JSON.parse(storedUser) : currentUser;
+  let loggedUser = currentUser;
+  if (storedUser) {
+    try { loggedUser = JSON.parse(storedUser); } catch { loggedUser = currentUser; }
+  }
 
   return (
     <MunicipioProvider>

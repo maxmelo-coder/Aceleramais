@@ -1,20 +1,43 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IconConfig, IconSave, IconUpload, IconGlobe } from '@/components/Icons';
+import { storageGet, storageSet } from '@/lib/storage';
 
 const tabLabels = ['Plataforma', 'Avaliações', 'Relatórios', 'Segurança', 'Sobre'] as const;
 type Tab = typeof tabLabels[number];
 
+const defaultConfig = {
+  nomePlataforma: 'Acelera+ Escola de Empreendedorismo',
+  anoLetivo: '2025',
+  corPrimaria: '#F48B1B',
+  corSecundaria: '#2E8C99',
+  rodapeRelatorio: 'Acelera+ Escola de Empreendedorismo · 2025',
+  notaMinima: 6,
+  lgpd: true,
+  logAcoes: true,
+  anonimizacao: false,
+};
+
 export default function ConfiguracoesPage() {
   const [tab, setTab] = useState<Tab>('Plataforma');
   const [saved, setSaved] = useState(false);
-  const [lgpd, setLgpd] = useState(true);
-  const [logAcoes, setLogAcoes] = useState(true);
-  const [anonimizacao, setAnonimizacao] = useState(false);
+  const [config, setConfig] = useState(() => storageGet('acelera_config', defaultConfig));
+  const [lgpd, setLgpd] = useState(config.lgpd);
+  const [logAcoes, setLogAcoes] = useState(config.logAcoes);
+  const [anonimizacao, setAnonimizacao] = useState(config.anonimizacao);
+
+  useEffect(() => {
+    storageSet('acelera_config', { ...config, lgpd, logAcoes, anonimizacao });
+  }, [config, lgpd, logAcoes, anonimizacao]);
 
   function handleSave() {
+    storageSet('acelera_config', { ...config, lgpd, logAcoes, anonimizacao });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  function setField(key: string, value: string | number) {
+    setConfig(prev => ({ ...prev, [key]: value }));
   }
 
   const Toggle = ({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) => (
@@ -52,12 +75,12 @@ export default function ConfiguracoesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Nome da plataforma</label>
-              <input defaultValue="Acelera+ Escola de Empreendedorismo"
+              <input value={config.nomePlataforma} onChange={e => setField('nomePlataforma', e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Ano letivo</label>
-              <input defaultValue="2025"
+              <input value={config.anoLetivo} onChange={e => setField('anoLetivo', e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30" />
             </div>
             <div>

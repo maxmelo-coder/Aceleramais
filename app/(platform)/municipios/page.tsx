@@ -1,9 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconMapPin, IconPlus, IconEdit, IconEye, IconX, IconSave, IconBuilding } from '@/components/Icons';
 import { municipiosData } from '@/lib/mock-data';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { MunicipioData, MunicipioStatus } from '@/lib/types';
 
 const statusConfig: Record<MunicipioStatus, { label: string; variant: 'green' | 'yellow' | 'blue' | 'gray' }> = {
@@ -29,8 +30,10 @@ const emptyForm = (): Omit<MunicipioData, 'schools'> => ({
 });
 
 export default function MunicipiosPage() {
-  const [municipios, setMunicipios] = useState<MunicipioData[]>(municipiosData);
+  const [municipios, setMunicipios] = useState<MunicipioData[]>(() => storageGet('acelera_municipios', municipiosData));
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => { storageSet('acelera_municipios', municipios); }, [municipios]);
   const [editing, setEditing] = useState<(Omit<MunicipioData, 'schools'>) | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -68,9 +71,9 @@ export default function MunicipiosPage() {
     setTimeout(closeModal, 1200);
   }
 
-  function handleField<K extends keyof typeof editing>(key: K, value: string) {
+  function handleField(key: string, value: string) {
     if (!editing) return;
-    setEditing({ ...editing, [key]: value } as typeof editing);
+    setEditing({ ...editing, [key]: value } as Omit<MunicipioData, 'schools'>);
   }
 
   return (

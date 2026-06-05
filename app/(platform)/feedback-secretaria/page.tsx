@@ -1,10 +1,17 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconFeedback, IconPlus, IconX, IconSave } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { SecretaryFeedback, FeedbackType, FeedbackStatus } from '@/lib/types';
+
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+  </svg>
+);
 
 const TIPOS: { value: FeedbackType; label: string }[] = [
   { value: 'avaliacao_geral',    label: 'Avaliação geral' },
@@ -38,13 +45,15 @@ function emptyForm() {
 
 export default function FeedbackSecretariaPage() {
   const { selected, all } = useMunicipio();
-  const [feedbacks, setFeedbacks] = useState<SecretaryFeedback[]>([]);
+  const [feedbacks, setFeedbacks] = useState<SecretaryFeedback[]>(() => storageGet('acelera_feedback', []));
   const [filterMunicipio, setFilterMunicipio] = useState('todos');
   const [filterTipo, setFilterTipo] = useState('todos');
   const [filterStatus, setFilterStatus] = useState('todos');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => { storageSet('acelera_feedback', feedbacks); }, [feedbacks]);
 
   const filtered = feedbacks.filter(f => {
     if (filterMunicipio !== 'todos' && f.municipioId !== filterMunicipio) return false;
@@ -147,6 +156,14 @@ export default function FeedbackSecretariaPage() {
                   <span className="text-xs text-gray-400">{new Date(f.createdAt).toLocaleDateString('pt-BR')}</span>
                 </div>
                 <p className="text-sm text-gray-600 line-clamp-3">{f.texto}</p>
+                <div className="flex justify-end pt-1">
+                  <button
+                    onClick={() => { if (confirm('Confirmar exclusão?')) setFeedbacks(prev => prev.filter(x => x.id !== f.id)); }}
+                    title="Excluir"
+                    className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                    <TrashIcon />
+                  </button>
+                </div>
               </div>
             );
           })}

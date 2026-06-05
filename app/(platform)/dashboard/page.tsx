@@ -1,15 +1,16 @@
 'use client';
 import React, { useState } from 'react';
 import StatCard from '@/components/StatCard';
-import { BarChart, LineChart, Gauge } from '@/components/Charts';
+import { LineChart, Gauge } from '@/components/Charts';
 import Badge from '@/components/Badge';
 import {
   IconSchool, IconClasses, IconStudents, IconTeacher,
   IconEval, IconIndex, IconDownload, IconFilter, IconMapPin,
   IconTraining, IconReports, IconSMART, IconAction, IconAlert,
 } from '@/components/Icons';
-import { emptyDashboardStats, scoreByTrimester, municipiosData } from '@/lib/mock-data';
+import { scoreByTrimester, municipiosData } from '@/lib/mock-data';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet } from '@/lib/storage';
 
 const indexColors = {
   critico:      '#E30613',
@@ -21,8 +22,13 @@ const indexColors = {
 export default function Dashboard() {
   const [filterTrim, setFilterTrim] = useState('2');
   const { selected, setSelected, all } = useMunicipio();
-  const stats = emptyDashboardStats;
-  const schoolCount = selected.schools.length;
+  const [escolas] = useState(() => storageGet<any[]>('acelera_escolas', selected.schools));
+  const [turmas] = useState(() => storageGet<any[]>('acelera_turmas', []));
+  const [avaliacoes] = useState(() => storageGet<any[]>('acelera_avaliacoes', []));
+  const [formacoes] = useState(() => storageGet<any[]>('acelera_formacoes', []));
+  const [metas] = useState(() => storageGet<any[]>('acelera_metas', []));
+  const [planos] = useState(() => storageGet<any[]>('acelera_planos', []));
+  const schoolCount = escolas.filter((s: any) => s.municipioId === selected.id).length || selected.schools.length;
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-screen-2xl mx-auto">
@@ -117,16 +123,15 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <StatCard title="Municípios"          value={municipiosData.length}  subtitle="parceiros"               icon={<IconMapPin size={18} />}    color="blue" />
         <StatCard title="Escolas"             value={schoolCount}            subtitle={`em ${selected.name}`}  icon={<IconSchool size={18} />}    color="blue" />
-        <StatCard title="Turmas"              value="—"                      subtitle="a cadastrar"             icon={<IconClasses size={18} />}   color="blue" />
-        <StatCard title="Estudantes avaliados" value="—"                     subtitle="a cadastrar"             icon={<IconStudents size={18} />}  color="orange" />
-        <StatCard title="Professores"         value="—"                      subtitle="a cadastrar"             icon={<IconTeacher size={18} />}   color="blue" />
-        <StatCard title="Aval. Diagnósticas"  value="—"                      subtitle="a cadastrar"             icon={<IconEval size={18} />}      color="green" />
-        <StatCard title="Aval. Docentes"      value="—"                      subtitle="a cadastrar"             icon={<IconTeacher size={18} />}   color="purple" />
-        <StatCard title="Formações"           value="—"                      subtitle="a cadastrar"             icon={<IconTraining size={18} />}  color="orange" />
-        <StatCard title="% Presença Formações" value="—"                     subtitle="média"                   icon={<IconTraining size={18} />}  color="green" />
+        <StatCard title="Turmas"              value={turmas.filter((t: any) => !t.municipioId || t.municipioId === selected.id).length || 0} subtitle={turmas.length === 0 ? 'a cadastrar' : 'cadastradas'} icon={<IconClasses size={18} />}   color="blue" />
+        <StatCard title="Estudantes avaliados" value={turmas.reduce((a: number, t: any) => a + (t.studentCount || 0), 0) || '—'} subtitle="total nas turmas" icon={<IconStudents size={18} />}  color="orange" />
+        <StatCard title="Avaliações"          value={avaliacoes.length || 0} subtitle={avaliacoes.length === 0 ? 'a cadastrar' : 'diagnósticas'}  icon={<IconEval size={18} />}      color="green" />
+        <StatCard title="Aval. Docentes"      value={storageGet<any[]>('acelera_forms_docente', []).length || 0} subtitle="formulários"  icon={<IconTeacher size={18} />}   color="purple" />
+        <StatCard title="Formações"           value={formacoes.length || 0}  subtitle={formacoes.length === 0 ? 'a cadastrar' : 'realizadas'}      icon={<IconTraining size={18} />}  color="orange" />
+        <StatCard title="% Presença Formações" value={formacoes.length > 0 ? Math.round(formacoes.reduce((a: number, f: any) => a + (f.presencaPct || 0), 0) / formacoes.length) + '%' : '—'} subtitle="média" icon={<IconTraining size={18} />}  color="green" />
         <StatCard title="% Desempenho Médio"  value="—"                      subtitle="estudantes"              icon={<IconIndex size={18} />}     color="orange" accent />
-        <StatCard title="Metas SMART"         value="—"                      subtitle="a cadastrar"             icon={<IconSMART size={18} />}     color="blue" />
-        <StatCard title="Planos de Ação"      value="—"                      subtitle="a cadastrar"             icon={<IconAction size={18} />}    color="gray" />
+        <StatCard title="Metas SMART"         value={metas.length || 0}      subtitle={metas.length === 0 ? 'a cadastrar' : 'definidas'}           icon={<IconSMART size={18} />}     color="blue" />
+        <StatCard title="Planos de Ação"      value={planos.length || 0}     subtitle={planos.length === 0 ? 'a cadastrar' : 'cadastrados'}         icon={<IconAction size={18} />}    color="gray" />
       </div>
 
       {/* Gráficos */}

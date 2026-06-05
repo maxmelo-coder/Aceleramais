@@ -1,9 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconAction, IconPlus, IconEdit, IconEye, IconTrash, IconX, IconSave } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { ActionPlan, ActionStatus, ActionPriority } from '@/lib/types';
 
 const PRIORIDADE_CONFIG: Record<ActionPriority, { label: string; variant: 'gray' | 'blue' | 'orange' | 'red' }> = {
@@ -43,8 +44,10 @@ export default function PlanoAcaoPage() {
   const [filterMunicipio, setFilterMunicipio] = useState('todos');
   const [filterPrioridade, setFilterPrioridade] = useState('todos');
   const [filterStatus, setFilterStatus] = useState('todos');
-  const [acoes, setAcoes] = useState<ActionPlan[]>([]);
+  const [acoes, setAcoes] = useState<ActionPlan[]>(() => storageGet('acelera_planos', []));
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => { storageSet('acelera_planos', acoes); }, [acoes]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -116,7 +119,7 @@ export default function PlanoAcaoPage() {
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard title="Total ações"   value={acoes.length}  icon={<IconAction size={18} />} color="blue" />
-        <StatCard title="Pendentes"     value={pendentes}     icon={<IconAction size={18} />} color="yellow" />
+        <StatCard title="Pendentes"     value={pendentes}     icon={<IconAction size={18} />} color="orange" />
         <StatCard title="Em andamento"  value={emAndamento}   icon={<IconAction size={18} />} color="orange" />
         <StatCard title="Atrasadas"     value={atrasadas}     icon={<IconAction size={18} />} color="red" />
       </div>

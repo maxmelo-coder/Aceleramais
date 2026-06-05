@@ -1,7 +1,8 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IconSWOT, IconPlus, IconX, IconSave, IconDownload } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { SwotItem, SwotCategory, SwotOrigin } from '@/lib/types';
 
 const QUADRANTES: { key: SwotCategory; label: string; color: string; bg: string; border: string }[] = [
@@ -27,8 +28,10 @@ export default function SwotPage() {
   const [filterMunicipio, setFilterMunicipio] = useState(selected.id);
   const [filterEscola, setFilterEscola] = useState('todas');
   const [filterTrimestre, setFilterTrimestre] = useState('2');
-  const [items, setItems] = useState<SwotItem[]>([]);
+  const [items, setItems] = useState<SwotItem[]>(() => storageGet('acelera_swot', []));
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => { storageSet('acelera_swot', items); }, [items]);
   const [form, setForm] = useState<ReturnType<typeof emptyItemForm> | null>(null);
   const [saved, setSaved] = useState(false);
 

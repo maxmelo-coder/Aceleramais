@@ -9,7 +9,9 @@ const roleLabels: Record<string, string> = {
   admin_eleva: 'Admin Acelera+',
   secretaria: 'Secretaria de Educação',
   gestor_escolar: 'Gestor Escolar',
+  gestor_municipal: 'Gestor Municipal',
   professor: 'Professor',
+  formador: 'Formador',
   visualizador: 'Visualizador',
 };
 

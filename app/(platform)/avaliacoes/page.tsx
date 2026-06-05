@@ -1,10 +1,17 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconEval, IconPlus, IconEdit, IconEye, IconX, IconSave, IconLink } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { DiagnosticAssessment, EvaluationStatus, EtapaEnsino } from '@/lib/types';
+
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+  </svg>
+);
 
 const ETAPAS: EtapaEnsino[] = ['EF Anos Iniciais', 'EF Anos Finais', 'EJA'];
 const SERIES = ['1º ano', '2º ano', '3º ano', '4º ano', '5º ano', '6º ano', '7º ano', '8º ano', '9º ano', 'EJA'];
@@ -35,8 +42,10 @@ function emptyForm() {
 export default function AvaliacoesPage() {
   const { selected } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Avaliações');
-  const [avaliacoes, setAvaliacoes] = useState<DiagnosticAssessment[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<DiagnosticAssessment[]>(() => storageGet('acelera_avaliacoes', []));
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => { storageSet('acelera_avaliacoes', avaliacoes); }, [avaliacoes]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -163,6 +172,12 @@ export default function AvaliacoesPage() {
                               )}
                               <button title="Ver respostas" className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
                                 <IconEye size={15} />
+                              </button>
+                              <button
+                                onClick={() => { if (confirm('Confirmar exclusão?')) setAvaliacoes(prev => prev.filter(x => x.id !== a.id)); }}
+                                title="Excluir"
+                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                                <TrashIcon />
                               </button>
                             </div>
                           </td>

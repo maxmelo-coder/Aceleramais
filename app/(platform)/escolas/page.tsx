@@ -1,10 +1,17 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconSchool, IconPlus, IconEdit, IconEye, IconX, IconSave, IconUpload } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { School, SchoolStatus } from '@/lib/types';
+
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+  </svg>
+);
 
 type ZonaFilter = 'todos' | 'urbana' | 'rural';
 
@@ -38,10 +45,13 @@ export default function EscolasPage() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<ReturnType<typeof emptySchoolForm> | null>(null);
+  const defaultSchools = all.flatMap(m => m.schools.map(s => ({ ...s, municipioName: m.name })));
   const [localSchools, setLocalSchools] = useState<School[]>(() =>
-    all.flatMap(m => m.schools.map(s => ({ ...s, municipioName: m.name })))
+    storageGet('acelera_escolas', defaultSchools)
   );
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => { storageSet('acelera_escolas', localSchools); }, [localSchools]);
 
   const filteredSchools = useMemo(() => {
     return localSchools.filter(s => {
@@ -223,6 +233,12 @@ export default function EscolasPage() {
                         </button>
                         <button title="Visualizar" className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
                           <IconEye size={15} />
+                        </button>
+                        <button
+                          onClick={() => { if (confirm('Confirmar exclusão?')) setLocalSchools(prev => prev.filter(x => x.id !== s.id)); }}
+                          title="Excluir"
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                          <TrashIcon />
                         </button>
                       </div>
                     </td>

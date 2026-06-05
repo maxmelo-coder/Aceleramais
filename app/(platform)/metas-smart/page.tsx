@@ -1,10 +1,17 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconSMART, IconPlus, IconEdit, IconEye, IconX, IconSave } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { SmartGoal, GoalStatus } from '@/lib/types';
+
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+  </svg>
+);
 
 const STATUS_CONFIG: Record<GoalStatus, { label: string; variant: 'gray' | 'blue' | 'green' | 'red' | 'purple' }> = {
   nao_iniciada: { label: 'Não iniciada', variant: 'gray'   },
@@ -41,8 +48,10 @@ export default function MetasSmartPage() {
   const { selected, all } = useMunicipio();
   const [filterMunicipio, setFilterMunicipio] = useState('todos');
   const [filterStatus, setFilterStatus] = useState('todos');
-  const [metas, setMetas] = useState<SmartGoal[]>([]);
+  const [metas, setMetas] = useState<SmartGoal[]>(() => storageGet('acelera_metas', []));
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => { storageSet('acelera_metas', metas); }, [metas]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -175,6 +184,12 @@ export default function MetasSmartPage() {
                 <div className="flex gap-2 pt-1">
                   <button className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={14} /></button>
                   <button className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={14} /></button>
+                  <button
+                    onClick={() => { if (confirm('Confirmar exclusão?')) setMetas(prev => prev.filter(x => x.id !== m.id)); }}
+                    title="Excluir"
+                    className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                    <TrashIcon />
+                  </button>
                 </div>
               </div>
             );

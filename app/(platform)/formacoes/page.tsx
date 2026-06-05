@@ -1,10 +1,17 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconTraining, IconPlus, IconEdit, IconEye, IconX, IconSave } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { TrainingSession, TrainingModality } from '@/lib/types';
+
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+  </svg>
+);
 
 const tabLabels = ['Formações', 'Presenças', 'Histórico'] as const;
 type Tab = typeof tabLabels[number];
@@ -42,8 +49,10 @@ function emptyForm() {
 export default function FormacoesPage() {
   const { selected, all } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Formações');
-  const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [sessions, setSessions] = useState<TrainingSession[]>(() => storageGet('acelera_formacoes', []));
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => { storageSet('acelera_formacoes', sessions); }, [sessions]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -54,6 +63,25 @@ export default function FormacoesPage() {
   const formadores = new Set(sessions.map(s => s.formador).filter(Boolean)).size;
 
   function openNew() { setForm(emptyForm()); setSaved(false); setShowModal(true); }
+  function openEdit(s: TrainingSession) {
+    setForm({
+      id: s.id,
+      title: s.title,
+      municipioId: s.municipioId ?? '',
+      municipioName: s.municipioName ?? '',
+      schools: s.schools ?? [],
+      date: s.date,
+      startTime: s.startTime ?? '',
+      cargaHoraria: s.cargaHoraria,
+      modalidade: s.modalidade,
+      formador: s.formador ?? '',
+      temas: s.temas?.join(', ') ?? '',
+      objetivos: s.objetivos ?? '',
+      totalProfessores: s.totalProfessores,
+    });
+    setSaved(false);
+    setShowModal(true);
+  }
   function closeModal() { setShowModal(false); setForm(null); setSaved(false); }
 
   function handleSave() {
@@ -61,8 +89,7 @@ export default function FormacoesPage() {
     if (!form.title.trim()) { alert('Título é obrigatório.'); return; }
     if (!form.date) { alert('Data é obrigatória.'); return; }
     const munName = all.find(m => m.id === form.municipioId)?.name ?? '';
-    setSessions(prev => [...prev, {
-      id: 'tr' + Date.now(),
+    const sessionData = {
       title: form.title,
       municipioId: form.municipioId,
       municipioName: munName,
@@ -75,9 +102,13 @@ export default function FormacoesPage() {
       temas: form.temas ? [form.temas] : [],
       objetivos: form.objetivos,
       totalProfessores: Number(form.totalProfessores),
-      presentes: 0,
-      presencaPct: 0,
-    }]);
+    };
+    const exists = sessions.find(s => s.id === (form as any).id);
+    if (exists) {
+      setSessions(prev => prev.map(s => s.id === (form as any).id ? { ...s, ...sessionData } : s));
+    } else {
+      setSessions(prev => [...prev, { ...sessionData, id: 'tr' + Date.now(), presentes: 0, presencaPct: 0 }]);
+    }
     setSaved(true);
     setTimeout(closeModal, 1200);
   }
@@ -167,8 +198,14 @@ export default function FormacoesPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            <button className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={15} /></button>
+                            <button onClick={() => openEdit(s)} title="Editar" className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={15} /></button>
                             <button className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={15} /></button>
+                            <button
+                              onClick={() => { if (confirm('Confirmar exclusão?')) setSessions(prev => prev.filter(x => x.id !== s.id)); }}
+                              title="Excluir"
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                              <TrashIcon />
+                            </button>
                           </div>
                         </td>
                       </tr>

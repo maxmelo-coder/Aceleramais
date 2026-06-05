@@ -1,13 +1,20 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconTeacher, IconPlus, IconEye, IconEdit, IconX, IconSave } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { TeacherEvaluationForm } from '@/lib/types';
 
 const tabLabels = ['Formulários', 'Respostas', 'Análise'] as const;
 type Tab = typeof tabLabels[number];
+
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+  </svg>
+);
 
 function emptyForm() {
   return {
@@ -24,10 +31,12 @@ function emptyForm() {
 export default function AvaliacaoDocentePage() {
   const { selected, all } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Formulários');
-  const [forms, setForms] = useState<TeacherEvaluationForm[]>([]);
+  const [forms, setForms] = useState<TeacherEvaluationForm[]>(() => storageGet('acelera_forms_docente', []));
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => { storageSet('acelera_forms_docente', forms); }, [forms]);
 
   const totalRespondentes = forms.reduce((a, f) => a + f.respondentes, 0);
   const mediaParticipacao = forms.length > 0
@@ -35,6 +44,19 @@ export default function AvaliacaoDocentePage() {
     : 0;
 
   function openNew() { setForm(emptyForm()); setSaved(false); setShowModal(true); }
+  function openEdit(f: TeacherEvaluationForm) {
+    setForm({
+      id: f.id,
+      title: f.title,
+      municipioId: f.municipioId ?? '',
+      municipioName: f.municipioName ?? '',
+      trimestre: f.trimestre,
+      totalProfessores: f.totalProfessores,
+      status: f.status,
+    });
+    setSaved(false);
+    setShowModal(true);
+  }
   function closeModal() { setShowModal(false); setForm(null); setSaved(false); }
 
   function handleSave() {
@@ -140,8 +162,14 @@ export default function AvaliacaoDocentePage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            <button className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={15} /></button>
+                            <button onClick={() => openEdit(f)} title="Editar" className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={15} /></button>
                             <button className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={15} /></button>
+                            <button
+                              onClick={() => { if (confirm('Confirmar exclusão?')) setForms(prev => prev.filter(x => x.id !== f.id)); }}
+                              title="Excluir"
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                              <TrashIcon />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -180,7 +208,7 @@ export default function AvaliacaoDocentePage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900 text-lg">Novo Formulário de Avaliação</h3>
+              <h3 className="font-semibold text-gray-900 text-lg">{form.id ? 'Editar Formulário' : 'Novo Formulário de Avaliação'}</h3>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={20} /></button>
             </div>
             <div className="p-6 space-y-4">

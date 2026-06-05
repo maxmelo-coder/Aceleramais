@@ -1,10 +1,17 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/Badge';
 import StatCard from '@/components/StatCard';
 import { IconMaterials, IconPlus, IconX, IconSave, IconUpload, IconLink, IconBook, IconDownload } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
+import { storageGet, storageSet } from '@/lib/storage';
 import type { TrainingMaterial, MaterialType } from '@/lib/types';
+
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+  </svg>
+);
 
 const tabLabels = ['Todos', 'PPT', 'PDF', 'Vídeos', 'Links'] as const;
 type Tab = typeof tabLabels[number];
@@ -60,8 +67,10 @@ function emptyForm() {
 export default function MateriaisPage() {
   const { all } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Todos');
-  const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
+  const [materials, setMaterials] = useState<TrainingMaterial[]>(() => storageGet('acelera_materiais', []));
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => { storageSet('acelera_materiais', materials); }, [materials]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -177,6 +186,14 @@ export default function MateriaisPage() {
                   <IconLink size={12} /> Acessar material
                 </a>
               )}
+              <div className="flex justify-end pt-1">
+                <button
+                  onClick={() => { if (confirm('Confirmar exclusão?')) setMaterials(prev => prev.filter(x => x.id !== m.id)); }}
+                  title="Excluir"
+                  className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                  <TrashIcon />
+                </button>
+              </div>
             </div>
           ))}
         </div>
