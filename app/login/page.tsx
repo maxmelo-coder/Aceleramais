@@ -144,32 +144,6 @@ export default function ElevaLogin() {
             </button>
           </form>
 
-          {/* Credentials panel */}
-          <div className="mt-6 p-4 bg-[#060606] rounded-xl space-y-3">
-            <p className="text-xs font-semibold text-white/70 uppercase tracking-wider">Acessos disponíveis</p>
-            {USERS.map(u => (
-              <button
-                key={u.email}
-                onClick={() => fillDemo(u)}
-                className="w-full text-left p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors group"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-white">{u.name}</p>
-                    <p className="text-[11px] text-white/40 mt-0.5">{u.email}</p>
-                  </div>
-                  <span className="text-[10px] px-2 py-1 rounded-full bg-[#F48B1B]/20 text-[#F48B1B] font-medium flex-shrink-0 ml-2">
-                    {u.role}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <span className="text-[11px] text-white/30">Senha:</span>
-                  <code className="text-[11px] text-[#2E8C99] font-mono">{u.password}</code>
-                  <span className="text-[10px] text-white/20 group-hover:text-white/40 transition-colors ml-auto">clique para preencher →</span>
-                </div>
-              </button>
-            ))}
-          </div>
 
           <p className="mt-6 text-center text-xs text-gray-400">
             Ao acessar, você concorda com os{' '}
