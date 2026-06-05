@@ -1,17 +1,14 @@
 'use client';
 import React, { useState } from 'react';
 import StatCard from '@/components/StatCard';
-import { BarChart, HBarChart, DonutChart, LineChart, Gauge } from '@/components/Charts';
+import { BarChart, HBarChart, LineChart, Gauge } from '@/components/Charts';
 import Badge from '@/components/Badge';
 import {
   IconSchool, IconClasses, IconStudents, IconTeacher,
-  IconEval, IconIndex, IconAlert, IconTrend, IconDownload,
-  IconFilter,
+  IconEval, IconIndex, IconDownload, IconFilter,
 } from '@/components/Icons';
-import {
-  dashboardStats, scoreBySchool, participationBySchool,
-  scoreByTrimester, materialUsageData, competenciasData, schools,
-} from '@/lib/mock-data';
+import { emptyDashboardStats, scoreByTrimester } from '@/lib/mock-data';
+import { useMunicipio } from '@/lib/municipio-context';
 
 const indexColors = {
   critico: '#E30613',
@@ -20,7 +17,7 @@ const indexColors = {
   excelente: '#059669',
 };
 const indexLabels = {
-  critico: 'Atenção Crítica',
+  critico: 'Sem dados',
   desenvolvimento: 'Em Desenvolvimento',
   bom: 'Bom Andamento',
   excelente: 'Excelente Execução',
@@ -28,7 +25,12 @@ const indexLabels = {
 
 export default function Dashboard() {
   const [filterTrim, setFilterTrim] = useState('2');
-  const stats = dashboardStats;
+  const { selected } = useMunicipio();
+  const stats = emptyDashboardStats;
+
+  // Dados do município selecionado
+  const schools = selected.schools;
+  const schoolCount = schools.length;
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-screen-2xl mx-auto">
@@ -36,7 +38,9 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Dashboard Geral</h1>
-          <p className="text-sm text-gray-500">Rede Municipal de Ensino — Limoeiro de Anadia, AL · Ano letivo 2025</p>
+          <p className="text-sm text-gray-500">
+            Rede Municipal de Ensino — {selected.name}, {selected.uf} · Ano letivo 2025
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <select
@@ -60,24 +64,16 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Índice Acelera+ em destaque */}
+      {/* Índice Acelera+ */}
       <div className="bg-[#060606] rounded-2xl p-6 flex flex-wrap items-center gap-6">
         <div className="flex-shrink-0">
-          <Gauge
-            value={stats.elevaIndex}
-            color={indexColors[stats.elevaIndexLevel]}
-            label="Índice Acelera+"
-            size={120}
-          />
+          <Gauge value={0} color={indexColors.critico} label="Índice Acelera+" size={120} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-white font-bold text-2xl">{stats.elevaIndex}%</span>
-            <span
-              className="px-2.5 py-1 rounded-full text-xs font-bold"
-              style={{ backgroundColor: indexColors[stats.elevaIndexLevel] + '33', color: indexColors[stats.elevaIndexLevel] }}
-            >
-              {indexLabels[stats.elevaIndexLevel]}
+            <span className="text-white font-bold text-2xl">—</span>
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-white/10 text-white/60">
+              Aguardando dados
             </span>
           </div>
           <p className="text-white font-semibold">Índice Acelera+ de Execução do Projeto</p>
@@ -86,14 +82,14 @@ export default function Dashboard() {
           </p>
           <div className="mt-3 flex flex-wrap gap-4">
             {[
-              { label: 'Participação discente', value: `${stats.evaluationResponseRate}%` },
-              { label: 'Média dos estudantes', value: `${stats.avgStudentScore}` },
-              { label: 'Participação docente', value: `${stats.teacherTrainingParticipation}%` },
-              { label: 'Execução do projeto', value: `${stats.projectExecutionLevel}%` },
+              { label: 'Participação discente', value: '—' },
+              { label: 'Média dos estudantes',  value: '—' },
+              { label: 'Participação docente',  value: '—' },
+              { label: 'Execução do projeto',   value: '—' },
             ].map(item => (
               <div key={item.label}>
                 <p className="text-white/40 text-xs">{item.label}</p>
-                <p className="text-white font-bold text-lg leading-none">{item.value}</p>
+                <p className="text-white/30 font-bold text-lg leading-none">{item.value}</p>
               </div>
             ))}
           </div>
@@ -101,12 +97,12 @@ export default function Dashboard() {
         <div className="w-full lg:w-auto">
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Satisfação docente', value: `${stats.teacherSatisfaction}/5`, ok: stats.teacherSatisfaction >= 4 },
-              { label: 'Satisfação Secretaria', value: `${stats.secretarySatisfaction}/5`, ok: stats.secretarySatisfaction >= 4 },
+              { label: 'Satisfação docente',    value: '—' },
+              { label: 'Satisfação Secretaria', value: '—' },
             ].map(item => (
-              <div key={item.label} className={`rounded-xl p-3 ${item.ok ? 'bg-[#2E8C99]/20' : 'bg-[#F48B1B]/20'}`}>
+              <div key={item.label} className="rounded-xl p-3 bg-white/5">
                 <p className="text-white/60 text-xs">{item.label}</p>
-                <p className={`font-bold text-xl ${item.ok ? 'text-[#4BAAB6]' : 'text-[#FFA94D]'}`}>{item.value}</p>
+                <p className="font-bold text-xl text-white/30">{item.value}</p>
               </div>
             ))}
           </div>
@@ -115,103 +111,39 @@ export default function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard title="Escolas" value={stats.totalSchools} subtitle="Todas ativas" icon={<IconSchool size={18} />} color="blue" />
-        <StatCard title="Turmas" value={stats.totalClasses} subtitle="Em 5 escolas" icon={<IconClasses size={18} />} color="blue" />
-        <StatCard title="Estudantes" value={stats.totalStudents.toLocaleString('pt-BR')} subtitle="Matriculados" icon={<IconStudents size={18} />} color="orange" />
-        <StatCard title="Professores" value={stats.totalTeachers} subtitle="Vinculados" icon={<IconTeacher size={18} />} color="blue" />
-        <StatCard title="Resp. Avaliações" value={`${stats.evaluationResponseRate}%`} subtitle="Do total esperado" icon={<IconEval size={18} />} color="green" trend={{ value: 8, label: 'vs 1º Trim.' }} />
-        <StatCard title="Média Geral" value={stats.avgStudentScore.toFixed(1)} subtitle="Estudantes" icon={<IconIndex size={18} />} color="orange" trend={{ value: 5, label: 'vs 1º Trim.' }} accent />
+        <StatCard title="Escolas"       value={schoolCount}  subtitle={`em ${selected.name}`}  icon={<IconSchool size={18} />}   color="blue" />
+        <StatCard title="Turmas"        value="—"            subtitle="A cadastrar"             icon={<IconClasses size={18} />}  color="blue" />
+        <StatCard title="Estudantes"    value="—"            subtitle="A cadastrar"             icon={<IconStudents size={18} />} color="orange" />
+        <StatCard title="Professores"   value="—"            subtitle="A cadastrar"             icon={<IconTeacher size={18} />}  color="blue" />
+        <StatCard title="Resp. Aval."   value="—"            subtitle="A cadastrar"             icon={<IconEval size={18} />}     color="green" />
+        <StatCard title="Média Geral"   value="—"            subtitle="A cadastrar"             icon={<IconIndex size={18} />}    color="orange" accent />
       </div>
 
-      {/* Alertas */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-        <IconAlert size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-amber-800">Alertas de atenção</p>
-          <ul className="mt-1 space-y-0.5">
-            <li className="text-xs text-amber-700">• <strong>EMEF Dep. José Freitas</strong> — Participação abaixo de 75% no 2º trimestre (72%)</li>
-            <li className="text-xs text-amber-700">• <strong>4 professores</strong> ainda não responderam o formulário docente do 2º trimestre</li>
-            <li className="text-xs text-amber-700">• <strong>Avaliação de Ed. Financeira (9º ano)</strong> — Aplicação pendente</li>
-          </ul>
+      {/* Empty state */}
+      <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-[#FEF3E2] flex items-center justify-center mx-auto mb-4">
+          <IconSchool size={28} className="text-[#F48B1B]" />
         </div>
-      </div>
-
-      {/* Charts row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Score by school */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Desempenho por Escola</h3>
-            <Badge label="2º Trimestre" variant="blue" />
-          </div>
-          <BarChart data={scoreBySchool} height={180} maxValue={10} unit="" />
-        </div>
-
-        {/* Participation by school */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Participação por Escola</h3>
-            <Badge label="2º Trimestre" variant="blue" />
-          </div>
-          <HBarChart data={participationBySchool} unit="%" />
+        <h3 className="font-semibold text-gray-900 text-lg">
+          {selected.name} — {schoolCount} escola{schoolCount !== 1 ? 's' : ''} cadastrada{schoolCount !== 1 ? 's' : ''}
+        </h3>
+        <p className="text-sm text-gray-400 mt-2 max-w-md mx-auto">
+          Os dados deste município ainda não foram preenchidos. Acesse as seções de <strong>Escolas</strong>, <strong>Turmas</strong> e <strong>Estudantes</strong> para começar o cadastro.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <a href="/escolas" className="px-4 py-2 bg-[#F48B1B] text-white rounded-xl text-sm font-semibold hover:bg-[#D4720E] transition-colors">
+            Cadastrar dados das escolas
+          </a>
         </div>
       </div>
 
-      {/* Charts row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Evolution by trimester */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 lg:col-span-2">
-          <h3 className="font-semibold text-gray-900 mb-4">Evolução do Desempenho por Trimestre</h3>
-          <LineChart data={scoreByTrimester} height={160} maxValue={10} />
+      {/* Evolução trimestral */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-900">Evolução do Desempenho por Trimestre</h3>
+          <Badge label="2025" variant="blue" />
         </div>
-
-        {/* Material usage donut */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h3 className="font-semibold text-gray-900 mb-4">Uso do Material Didático</h3>
-          <DonutChart data={materialUsageData} centerLabel="docentes" centerValue="47" />
-        </div>
-      </div>
-
-      {/* Ranking e Competências */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* School ranking */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Ranking de Escolas — Índice Acelera+</h3>
-            <IconTrend size={16} className="text-[#2E8C99]" />
-          </div>
-          <div className="space-y-3">
-            {[...schools]
-              .sort((a, b) => b.elevaIndex - a.elevaIndex)
-              .map((school, i) => (
-                <div key={school.id} className="flex items-center gap-3">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                    ${i === 0 ? 'bg-[#F48B1B] text-white' : i === 1 ? 'bg-[#2E8C99] text-white' : i === 2 ? 'bg-[#4BAAB6] text-white' : 'bg-gray-100 text-gray-500'}`}>
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{school.name}</p>
-                    <div className="mt-1 h-1.5 bg-gray-100 rounded-full">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${school.elevaIndex}%`,
-                          backgroundColor: school.elevaIndex >= 80 ? '#059669' : school.elevaIndex >= 60 ? '#2E8C99' : '#F48B1B',
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-gray-700 flex-shrink-0">{school.elevaIndex}%</span>
-                </div>
-              ))}
-          </div>
-        </div>
-
-        {/* Competências */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h3 className="font-semibold text-gray-900 mb-4">Desempenho por Competência</h3>
-          <HBarChart data={competenciasData} unit="%" />
-        </div>
+        <LineChart data={scoreByTrimester} height={140} maxValue={10} />
       </div>
     </div>
   );

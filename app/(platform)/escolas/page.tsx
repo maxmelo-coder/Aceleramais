@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Badge, { statusBadge } from '@/components/Badge';
 import { IconPlus, IconSearch, IconEye, IconEdit, IconSchool, IconDownload } from '@/components/Icons';
-import { schools } from '@/lib/mock-data';
+import { useMunicipio } from '@/lib/municipio-context';
 
 export default function EscolasPage() {
   const [search, setSearch] = useState('');
+  const { selected } = useMunicipio();
+  const schools = selected.schools;
 
   const filtered = schools.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -18,7 +20,7 @@ export default function EscolasPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Escolas</h1>
-          <p className="text-sm text-gray-500">{schools.length} escolas cadastradas · Município de Limoeiro de Anadia — AL</p>
+          <p className="text-sm text-gray-500">{schools.length} escolas cadastradas · {selected.name} — {selected.uf}</p>
         </div>
         <button className="flex items-center gap-2 bg-[#F48B1B] text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#D4720E] transition-colors shadow-sm">
           <IconPlus size={16} />
