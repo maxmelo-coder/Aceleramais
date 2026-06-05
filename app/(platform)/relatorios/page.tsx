@@ -1,164 +1,156 @@
 'use client';
 import React, { useState } from 'react';
-import { BarChart, LineChart, DonutChart, HBarChart } from '@/components/Charts';
-import { Gauge } from '@/components/Charts';
+import { BarChart, LineChart } from '@/components/Charts';
 import Badge from '@/components/Badge';
-import {
-  IconDownload, IconFilter, IconReports, IconSchool,
-  IconEval, IconTeacher,
-} from '@/components/Icons';
-import {
-  scoreBySchool, participationBySchool, scoreByTrimester,
-  materialUsageData, competenciasData, dashboardStats, schools,
-} from '@/lib/mock-data';
+import { IconReports, IconDownload, IconEye } from '@/components/Icons';
+import { useMunicipio } from '@/lib/municipio-context';
+import { scoreByTrimester } from '@/lib/mock-data';
+import type { ReportType } from '@/lib/types';
 
-type ReportType = 'rede' | 'escola' | 'trimestre' | 'docente' | 'executivo';
+const tabLabels = ['Relatórios', 'Gráficos', 'Exportações'] as const;
+type Tab = typeof tabLabels[number];
+
+interface ReportCard {
+  type: ReportType;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+const REPORTS: ReportCard[] = [
+  { type: 'geral_municipio',     title: 'Relatório Geral do Município',  description: 'Visão completa do município com todos os indicadores.', icon: '🏙️' },
+  { type: 'por_escola',          title: 'Por Escola',                    description: 'Desempenho e participação por unidade escolar.', icon: '🏫' },
+  { type: 'por_turma',           title: 'Por Turma',                     description: 'Resultados detalhados por turma e série.', icon: '🧑‍🎓' },
+  { type: 'desempenho_discente', title: 'Desempenho Discente',           description: 'Notas e evolução dos estudantes por trimestre.', icon: '📈' },
+  { type: 'avaliacao_docente',   title: 'Avaliação Docente',             description: 'Participação e médias das avaliações dos professores.', icon: '👩‍🏫' },
+  { type: 'formacao_docente',    title: 'Formação Docente',              description: 'Carga horária, presença e cobertura das formações.', icon: '📚' },
+  { type: 'feedback_secretaria', title: 'Feedback da Secretaria',        description: 'Consolidado dos feedbacks recebidos por município.', icon: '💬' },
+  { type: 'execucao_projeto',    title: 'Execução do Projeto',           description: 'Nível de execução e cumprimento das metas gerais.', icon: '🎯' },
+  { type: 'prestacao_contas',    title: 'Prestação de Contas',           description: 'Relatório para prestação de contas e evidências.', icon: '📋' },
+];
 
 export default function RelatoriosPage() {
-  const [reportType, setReportType] = useState<ReportType>('rede');
+  const { selected, all } = useMunicipio();
+  const [tab, setTab] = useState<Tab>('Relatórios');
+  const [filterMunicipio, setFilterMunicipio] = useState(selected.id);
+  const [filterPeriodo, setFilterPeriodo] = useState('2');
 
   return (
-    <div className="p-4 lg:p-6 space-y-6 max-w-screen-2xl mx-auto">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Relatórios e Gráficos</h1>
-          <p className="text-sm text-gray-500">Análise completa por escola, turma e trimestre</p>
+          <h1 className="text-2xl font-bold text-gray-900">Relatórios e Gráficos</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Geração e exportação de relatórios analíticos</p>
         </div>
-        <button className="flex items-center gap-1.5 bg-[#2E8C99] text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#226E79] transition-colors shadow-sm">
-          <IconDownload size={16} />
-          Exportar PDF
-        </button>
       </div>
 
-      {/* Report type tabs */}
-      <div className="flex flex-wrap gap-2">
-        {([
-          { key: 'rede', label: 'Relatório Geral da Rede' },
-          { key: 'escola', label: 'Por Escola' },
-          { key: 'trimestre', label: 'Por Trimestre' },
-          { key: 'docente', label: 'Docente' },
-          { key: 'executivo', label: 'Executivo' },
-        ] as { key: ReportType; label: string }[]).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setReportType(tab.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all
-              ${reportType === tab.key
-                ? 'bg-[#060606] text-white shadow-sm'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
-          >
-            {tab.label}
+      {/* Global Filters */}
+      <div className="flex flex-wrap gap-3 items-center bg-white rounded-2xl border border-gray-100 p-4">
+        <span className="text-sm font-medium text-gray-600">Filtros:</span>
+        <select value={filterMunicipio} onChange={e => setFilterMunicipio(e.target.value)}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#2E8C99]">
+          <option value="todos">Todos os municípios</option>
+          {all.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+        <select value={filterPeriodo} onChange={e => setFilterPeriodo(e.target.value)}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#2E8C99]">
+          <option value="1">1º Trimestre 2025</option>
+          <option value="2">2º Trimestre 2025</option>
+          <option value="3">3º Trimestre 2025</option>
+          <option value="4">4º Trimestre 2025</option>
+          <option value="anual">Anual 2025</option>
+        </select>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+        {tabLabels.map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            {t}
           </button>
         ))}
       </div>
 
-      {/* Report content */}
-      {reportType === 'rede' && (
-        <div className="space-y-6">
-          {/* KPI Summary */}
-          <div className="bg-[#060606] rounded-2xl p-6">
-            <h2 className="text-white font-bold text-lg mb-4">Relatório Geral — Rede Municipal de Ensino</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { label: 'Índice Acelera+', value: `${dashboardStats.elevaIndex}%`, color: '#F48B1B' },
-                { label: 'Média estudantes', value: dashboardStats.avgStudentScore.toFixed(1), color: '#2E8C99' },
-                { label: 'Participação', value: `${dashboardStats.evaluationResponseRate}%`, color: '#4BAAB6' },
-                { label: 'Satisfação docente', value: `${dashboardStats.teacherSatisfaction}/5`, color: '#059669' },
-              ].map(item => (
-                <div key={item.label}>
-                  <p className="text-white/50 text-xs mb-1">{item.label}</p>
-                  <p className="text-2xl font-bold" style={{ color: item.color }}>{item.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Desempenho por Escola</h3>
-              <BarChart data={scoreBySchool} height={180} maxValue={10} />
-            </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Participação por Escola</h3>
-              <HBarChart data={participationBySchool} unit="%" />
-            </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Evolução Trimestral</h3>
-              <LineChart data={scoreByTrimester} height={160} maxValue={10} />
-            </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Uso do Material Didático</h3>
-              <DonutChart data={materialUsageData} centerLabel="professores" centerValue="47" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4">Competências Empreendedoras — Desempenho Médio</h3>
-            <BarChart data={competenciasData} height={180} maxValue={100} unit="%" />
-          </div>
-        </div>
-      )}
-
-      {reportType === 'escola' && (
-        <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900">Comparativo entre escolas</h3>
-          {schools.map(s => (
-            <div key={s.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900">{s.name}</h4>
-                  <p className="text-xs text-gray-500">{s.classCount} turmas · {s.studentCount} alunos</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400">Média</p>
-                    <p className="text-xl font-bold text-[#2E8C99]">{s.avgScore}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400">Participação</p>
-                    <p className="text-xl font-bold text-[#F48B1B]">{s.participationRate}%</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400">Índice</p>
-                    <p className="text-xl font-bold" style={{ color: s.elevaIndex >= 80 ? '#059669' : s.elevaIndex >= 60 ? '#2E8C99' : '#F48B1B' }}>{s.elevaIndex}%</p>
-                  </div>
-                </div>
+      {tab === 'Relatórios' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {REPORTS.map(r => (
+            <div key={r.type} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-3 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{r.icon}</span>
+                <h3 className="font-semibold text-gray-900 text-sm">{r.title}</h3>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full">
-                <div className="h-full rounded-full transition-all" style={{ width: `${s.elevaIndex}%`, backgroundColor: s.elevaIndex >= 80 ? '#059669' : s.elevaIndex >= 60 ? '#2E8C99' : '#F48B1B' }} />
+              <p className="text-xs text-gray-500">{r.description}</p>
+              <div className="flex gap-2 pt-1">
+                <button className="flex-1 flex items-center justify-center gap-1.5 text-xs bg-[#F48B1B]/10 text-[#D4720E] hover:bg-[#F48B1B]/20 py-2 rounded-lg font-medium transition-colors">
+                  <IconEye size={13} /> Gerar relatório
+                </button>
+                <button className="flex items-center gap-1.5 text-xs border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg font-medium transition-colors">
+                  <IconDownload size={13} /> PDF
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {reportType === 'trimestre' && (
-        <div className="space-y-6">
+      {tab === 'Gráficos' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4">Evolução de Desempenho por Trimestre</h3>
-            <LineChart data={scoreByTrimester} height={200} maxValue={10} />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Evolução por Trimestre</h3>
+              <Badge label="2025" variant="blue" />
+            </div>
+            {scoreByTrimester.every(d => d.value === 0) ? (
+              <div className="h-40 flex flex-col items-center justify-center text-center">
+                <IconReports size={32} className="text-gray-200 mb-2" />
+                <p className="text-gray-400 text-sm">Nenhum dado disponível</p>
+              </div>
+            ) : (
+              <LineChart data={scoreByTrimester} height={140} />
+            )}
           </div>
-          <div className="bg-[#EBF6F7] rounded-2xl p-5 border border-[#2E8C99]/20">
-            <h3 className="font-semibold text-[#226E79] mb-3">Recomendações pedagógicas — 2º Trimestre</h3>
-            <ul className="space-y-2 text-sm text-[#2E8C99]">
-              <li>• Intensificar o suporte à EMEF Dep. José Freitas com tutoria pedagógica focada em competências de comunicação</li>
-              <li>• Ampliar o uso de atividades práticas de resolução de problemas nas turmas de 7º e 8º anos</li>
-              <li>• Reforçar a formação docente em educação financeira antes da aplicação do 3º trimestre</li>
-              <li>• Incentivar registro de evidências em escolas com menos de 2 registros no trimestre</li>
-            </ul>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Desempenho por Escola</h3>
+              <Badge label={selected.name} variant="orange" />
+            </div>
+            <div className="h-40 flex flex-col items-center justify-center text-center">
+              <IconReports size={32} className="text-gray-200 mb-2" />
+              <p className="text-gray-400 text-sm">Aguardando dados de desempenho</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Participação nas Avaliações</h3>
+              <Badge label="por escola" variant="blue" />
+            </div>
+            <div className="h-40 flex flex-col items-center justify-center text-center">
+              <IconReports size={32} className="text-gray-200 mb-2" />
+              <p className="text-gray-400 text-sm">Aguardando dados de participação</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Presença nas Formações</h3>
+              <Badge label="% por formação" variant="green" />
+            </div>
+            <div className="h-40 flex flex-col items-center justify-center text-center">
+              <IconReports size={32} className="text-gray-200 mb-2" />
+              <p className="text-gray-400 text-sm">Aguardando dados de formações</p>
+            </div>
           </div>
         </div>
       )}
 
-      {(reportType === 'docente' || reportType === 'executivo') && (
-        <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-gray-100">
-          <IconReports size={40} className="text-gray-200 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Relatório em geração…</p>
-          <p className="text-sm text-gray-400 mt-1">Selecione os filtros e clique em Exportar PDF para gerar o relatório completo.</p>
-          <button className="mt-4 flex items-center gap-2 mx-auto bg-[#2E8C99] text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-[#226E79] transition-colors">
-            <IconDownload size={16} />
-            Gerar e baixar PDF
-          </button>
+      {tab === 'Exportações' && (
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-gray-100">
+          <IconDownload size={40} className="text-gray-300 mb-3" />
+          <p className="text-gray-500 font-medium">Nenhuma exportação gerada</p>
+          <p className="text-gray-400 text-sm mt-1 max-w-xs">Acesse a aba "Relatórios" e clique em "Exportar PDF" para gerar exportações.</p>
         </div>
       )}
     </div>

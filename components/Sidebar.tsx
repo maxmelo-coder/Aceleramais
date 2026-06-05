@@ -1,12 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  IconDashboard, IconSchool, IconClasses, IconStudents, IconEval,
-  IconTeacher, IconFeedback, IconTraining, IconEvidence, IconReports,
-  IconSWOT, IconSMART, IconAction, IconUsers, IconSetup, IconConfig,
-  IconChevron, IconLogout, IconX,
+  IconDashboard, IconMapPin, IconSchool, IconClasses, IconEval,
+  IconTeacher, IconFeedback, IconTraining, IconMaterials, IconReports,
+  IconSWOT, IconSMART, IconAction, IconUsers, IconConfig,
+  IconLogout, IconX,
 } from './Icons';
 
 interface NavItem {
@@ -17,22 +17,21 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: <IconDashboard size={18} /> },
-  { label: 'Escolas', href: '/escolas', icon: <IconSchool size={18} /> },
-  { label: 'Turmas', href: '/turmas', icon: <IconClasses size={18} /> },
-  { label: 'Estudantes', href: '/estudantes', icon: <IconStudents size={18} /> },
-  { label: 'Avaliações Diagnósticas', href: '/avaliacoes', icon: <IconEval size={18} /> },
-  { label: 'Avaliação Docente', href: '/avaliacao-docente', icon: <IconTeacher size={18} /> },
-  { label: 'Feedback da Secretaria', href: '/feedback-secretaria', icon: <IconFeedback size={18} /> },
-  { label: 'Formações Docentes', href: '/formacoes', icon: <IconTraining size={18} /> },
-  { label: 'Evidências Pedagógicas', href: '/evidencias', icon: <IconEvidence size={18} /> },
-  { label: 'Relatórios e Gráficos', href: '/relatorios', icon: <IconReports size={18} /> },
-  { label: 'Análise SWOT', href: '/swot', icon: <IconSWOT size={18} /> },
-  { label: 'Metas SMART', href: '/metas-smart', icon: <IconSMART size={18} /> },
-  { label: 'Plano de Ação', href: '/plano-acao', icon: <IconAction size={18} /> },
-  { label: 'Usuários e Permissões', href: '/usuarios', icon: <IconUsers size={18} /> },
-  { label: 'Configuração da Plataforma', href: '/configuracao', icon: <IconSetup size={18} /> },
-  { label: 'Configurações Gerais', href: '/configuracoes', icon: <IconConfig size={18} /> },
+  { label: 'Dashboard',               href: '/dashboard',          icon: <IconDashboard size={18} /> },
+  { label: 'Municípios',              href: '/municipios',         icon: <IconMapPin size={18} /> },
+  { label: 'Escolas',                 href: '/escolas',            icon: <IconSchool size={18} /> },
+  { label: 'Turmas',                  href: '/turmas',             icon: <IconClasses size={18} /> },
+  { label: 'Avaliações Diagnósticas', href: '/avaliacoes',         icon: <IconEval size={18} /> },
+  { label: 'Avaliação Docente',       href: '/avaliacao-docente',  icon: <IconTeacher size={18} /> },
+  { label: 'Feedback da Secretaria',  href: '/feedback-secretaria',icon: <IconFeedback size={18} /> },
+  { label: 'Formação Docente',        href: '/formacoes',          icon: <IconTraining size={18} /> },
+  { label: 'Materiais p/ Formações',  href: '/materiais',          icon: <IconMaterials size={18} /> },
+  { label: 'Relatórios e Gráficos',   href: '/relatorios',         icon: <IconReports size={18} /> },
+  { label: 'Análise SWOT',            href: '/swot',               icon: <IconSWOT size={18} /> },
+  { label: 'Metas SMART',             href: '/metas-smart',        icon: <IconSMART size={18} /> },
+  { label: 'Plano de Ação',           href: '/plano-acao',         icon: <IconAction size={18} /> },
+  { label: 'Usuários e Permissões',   href: '/usuarios',           icon: <IconUsers size={18} /> },
+  { label: 'Configurações Gerais',    href: '/configuracoes',      icon: <IconConfig size={18} /> },
 ];
 
 interface SidebarProps {
@@ -58,7 +57,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       `}>
         {/* Logo area */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <div className="flex items-center bg-white rounded-xl px-3 py-2 w-full mr-2">
+          <div className="flex items-center bg-white rounded-xl px-3 py-2 flex-1 mr-2">
             <img src="/logo.png" alt="Acelera+" className="h-9 w-auto object-contain" />
           </div>
           <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white p-1">
@@ -67,20 +66,20 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5 scrollbar-thin">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
           {navItems.map(item => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => window.innerWidth < 1024 && onClose()}
+                onClick={() => typeof window !== 'undefined' && window.innerWidth < 1024 && onClose()}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                   transition-all duration-150 group
                   ${active
                     ? 'bg-[#F48B1B] text-white'
-                    : 'text-white/60 hover:bg-white/8 hover:text-white'}
+                    : 'text-white/60 hover:bg-white/10 hover:text-white'}
                 `}
               >
                 <span className={`flex-shrink-0 ${active ? 'text-white' : 'text-white/50 group-hover:text-white'}`}>
@@ -100,7 +99,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         {/* Bottom */}
         <div className="p-4 border-t border-white/10">
           <button
-            onClick={() => { localStorage.removeItem('eleva_user'); window.location.href = '/login'; }}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('eleva_user');
+                window.location.href = '/login';
+              }
+            }}
             className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors w-full"
           >
             <IconLogout size={16} />

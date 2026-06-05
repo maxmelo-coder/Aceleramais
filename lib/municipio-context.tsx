@@ -1,6 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { municipiosData, type MunicipioData } from './mock-data';
+import { municipiosData } from './mock-data';
+import type { MunicipioData } from './types';
 
 interface MunicipioContextType {
   selected: MunicipioData;

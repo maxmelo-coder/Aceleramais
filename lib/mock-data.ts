@@ -1,22 +1,16 @@
 import type {
   User, School, Trimester, DashboardStats, ProjectConfig, ChartDataPoint,
+  MunicipioData,
 } from './types';
 
-// ── Tipo de Município com dados ──────────────────────────────
-export interface MunicipioData {
-  id: string;
-  name: string;
-  state: string;
-  uf: string;
-  secretario: string;
-  schools: School[];
-}
+export type { MunicipioData };
 
 // ── Helper: escola sem dados numéricos ───────────────────────
 function emptySchool(id: string, name: string, code: string, municipioId: string): School {
   return {
     id, name, code, municipioId,
-    address: '', gestorName: '', email: '', phone: '',
+    address: '', bairro: '', zona: 'urbana',
+    gestorName: '', email: '', phone: '',
     classCount: 0, studentCount: 0, teacherCount: 0,
     status: 'ativo', participationRate: 0, avgScore: 0, elevaIndex: 0,
   };
@@ -52,16 +46,10 @@ const schoolsLimoeiro: School[] = [
 ];
 
 // ── Município 02 — Lagoa da Canoa, AL ────────────────────────
-// Nomes serão atualizados com dados reais
-const schoolsLagoa: School[] = [
-  emptySchool('lc-s01', 'Aguardando cadastro de escolas', 'LC-001', 'm02'),
-];
+const schoolsLagoa: School[] = [];
 
 // ── Município 03 — Taquarana, AL ─────────────────────────────
-// Nomes serão atualizados com dados reais
-const schoolsTaquarana: School[] = [
-  emptySchool('tq-s01', 'Aguardando cadastro de escolas', 'TQ-001', 'm03'),
-];
+const schoolsTaquarana: School[] = [];
 
 // ── Lista de Municípios ───────────────────────────────────────
 export const municipiosData: MunicipioData[] = [
@@ -69,21 +57,27 @@ export const municipiosData: MunicipioData[] = [
     id: 'm01',
     name: 'Limoeiro de Anadia',
     state: 'Alagoas', uf: 'AL',
+    codigoIBGE: '2704005',
     secretario: '—',
+    status: 'ativo',
     schools: schoolsLimoeiro,
   },
   {
     id: 'm02',
     name: 'Lagoa da Canoa',
     state: 'Alagoas', uf: 'AL',
+    codigoIBGE: '2703908',
     secretario: '—',
+    status: 'ativo',
     schools: schoolsLagoa,
   },
   {
     id: 'm03',
     name: 'Taquarana',
     state: 'Alagoas', uf: 'AL',
+    codigoIBGE: '2708956',
     secretario: '—',
+    status: 'ativo',
     schools: schoolsTaquarana,
   },
 ];
@@ -94,7 +88,7 @@ export const currentUser: User = {
   name: 'Administrador',
   email: 'admin@acelera.com.br',
   role: 'super_admin',
-  municipio: 'Limoeiro de Anadia',
+  municipioName: 'Limoeiro de Anadia',
   status: 'ativo',
 };
 
@@ -125,41 +119,63 @@ export const trimesters: Trimester[] = [
 
 // ── Dashboard Stats zerado ────────────────────────────────────
 export const emptyDashboardStats: DashboardStats = {
+  totalMunicipios: 3,
   totalSchools: 0,
   totalClasses: 0,
   totalStudents: 0,
   totalTeachers: 0,
+  totalEvaluations: 0,
+  totalTeacherEvaluations: 0,
+  totalTrainings: 0,
+  totalSmartGoals: 0,
+  totalActionPlans: 0,
   evaluationResponseRate: 0,
   avgStudentScore: 0,
   projectExecutionLevel: 0,
   teacherTrainingParticipation: 0,
   teacherSatisfaction: 0,
   secretarySatisfaction: 0,
+  trainingPresencaPct: 0,
+  pendingActionPlans: 0,
+  overdueActionPlans: 0,
   elevaIndex: 0,
   elevaIndexLevel: 'critico',
 };
 
-// Alias para compatibilidade com páginas que importam dashboardStats
+// Alias para compatibilidade
 export const dashboardStats = emptyDashboardStats;
 
 // ── Arrays vazios ─────────────────────────────────────────────
-export const turmas:             never[] = [];
-export const students:           never[] = [];
-export const evaluations:        never[] = [];
-export const teacherEvaluations: never[] = [];
-export const secretaryFeedbacks: never[] = [];
-export const trainings:          never[] = [];
-export const evidences:          never[] = [];
-export const smartGoals:         never[] = [];
-export const actionPlans:        never[] = [];
-export const municipios =        municipiosData.map(m => ({ id: m.id, name: m.name, state: m.state, secretario: m.secretario, schools: m.schools.length }));
+export const turmas:                  never[] = [];
+export const students:                never[] = [];
+export const teachers:                never[] = [];
+export const evaluations:             never[] = [];
+export const teacherEvaluations:      never[] = [];
+export const teacherEvaluationForms:  never[] = [];
+export const secretaryFeedbacks:      never[] = [];
+export const trainings:               never[] = [];
+export const trainingMaterials:       never[] = [];
+export const evidences:               never[] = [];
+export const smartGoals:              never[] = [];
+export const actionPlans:             never[] = [];
+export const users:                   never[] = [];
 
 export const swotAnalysis = {
   id: 'sw001',
-  trimesterId: 'tr2', trimesterName: '2º Trimestre',
+  trimestre: '2º Trimestre',
   items: [] as never[],
   updatedAt: new Date().toISOString(),
 };
+
+// Para compatibilidade com páginas que usam municipios como lista simples
+export const municipios = municipiosData.map(m => ({
+  id: m.id,
+  name: m.name,
+  state: m.state,
+  secretario: m.secretario,
+  status: m.status,
+  schools: m.schools.length,
+}));
 
 // ── Gráficos (vazios) ─────────────────────────────────────────
 export const scoreBySchool:         ChartDataPoint[] = [];
