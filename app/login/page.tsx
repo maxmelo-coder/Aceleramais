@@ -144,6 +144,9 @@ export default function ElevaLogin() {
             </button>
           </form>
 
+          <div className="mt-8 flex justify-center">
+            <img src="/logo.png" alt="Acelera+ Escola de Empreendedorismo" className="h-16 w-auto opacity-80" />
+          </div>
 
           <p className="mt-6 text-center text-xs text-gray-400">
             Ao acessar, você concorda com os{' '}
