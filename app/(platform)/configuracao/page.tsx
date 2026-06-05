@@ -24,7 +24,7 @@ export default function ConfiguracaoPage() {
     { label: 'Satisfação docente', active: true, value: '4,3/5' },
     { label: 'Satisfação Secretaria', active: true, value: '4,0/5' },
     { label: 'Cumprimento metas SMART', active: true, value: '67%' },
-    { label: 'Índice Eleva+ de Execução', active: true, value: '79%' },
+    { label: 'Índice Acelera+ de Execução', active: true, value: '79%' },
   ];
 
   return (

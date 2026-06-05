@@ -7,7 +7,7 @@ import type {
 
 // ── Projeto ─────────────────────────────────────────────────
 export const projectConfig: ProjectConfig = {
-  projectName: 'Eleva+ Educação Empreendedora',
+  projectName: 'Acelera+ Escola de Empreendedorismo',
   networkName: 'Rede Municipal de Ensino de Limoeiro de Anadia',
   year: 2025,
   executionPeriod: 'Fevereiro a Novembro de 2025',
@@ -55,7 +55,7 @@ export const municipios: Municipio[] = [
 
 // ── Escolas ──────────────────────────────────────────────────
 // Fonte: Censo Escolar INEP 2025 — Rede Municipal de Limoeiro de Anadia, AL (25 unidades)
-// s001–s005: EMEBs participantes do projeto Eleva+ (ensino fundamental)
+// s001–s005: EMEBs participantes do projeto Acelera+ (ensino fundamental)
 // s006–s025: demais unidades da rede (CEI, CMEI e EMEBs não-projeto)
 export const schools: School[] = [
   // ── 5 EMEBs participantes do projeto ────────────────────────
@@ -93,7 +93,7 @@ export const schools: School[] = [
     participationRate: 96,
     avgScore: 7.5,
     elevaIndex: 91,
-    observations: 'Maior índice Eleva+ da rede.',
+    observations: 'Maior índice Acelera+ da rede.',
   },
   {
     id: 's003',
@@ -649,7 +649,7 @@ export const secretaryFeedbacks: SecretaryFeedback[] = [
     alignment: 5,
     expectations: 'Esperamos que o projeto contribua para a elevação do IDEB dos anos finais (atualmente 5,4), alcançando a meta municipal de 6,0 até 2027.',
     decisions: 'Inclusão da EMEB Araci Cavalcante da Silva no 2º trimestre. Solicitação de formação específica sobre infraestrutura precária.',
-    comment: 'O projeto Eleva+ chegou num momento importante para Limoeiro de Anadia. Com o IOEB municipal em 4,81, precisamos de iniciativas que transformem dados em ação pedagógica concreta.',
+    comment: 'O projeto Acelera+ chegou num momento importante para Limoeiro de Anadia. Com o IOEB municipal em 4,81, precisamos de iniciativas que transformem dados em ação pedagógica concreta.',
     submittedAt: '2025-05-05',
   },
 ];
@@ -754,7 +754,7 @@ export const smartGoals: SmartGoal[] = [
     id: 'sg001',
     title: 'Elevar desempenho na EMEB Pedro Ribeiro',
     schoolId: 's003', schoolName: 'EMEB Pedro Ribeiro',
-    indicator: 'Média de desempenho nas avaliações Eleva+',
+    indicator: 'Média de desempenho nas avaliações Acelera+',
     description: 'Elevar a média da escola de 5,8 para 6,5 até o final do 3º trimestre, com foco em resolução de problemas e comunicação (competências do SAEB).',
     initialValue: 5.8, targetValue: 6.5, currentValue: 6.1,
     deadline: '2025-10-31', responsible: 'Carla Mendes Ferreira',
@@ -775,7 +775,7 @@ export const smartGoals: SmartGoal[] = [
     id: 'sg003',
     title: 'Evidências pedagógicas: 3 por escola por trimestre',
     indicator: 'Número de evidências registradas por escola',
-    description: 'Garantir ao menos 3 evidências pedagógicas registradas por escola por trimestre — conectando o Eleva+ ao portfólio avaliativo das escolas.',
+    description: 'Garantir ao menos 3 evidências pedagógicas registradas por escola por trimestre — conectando o Acelera+ ao portfólio avaliativo das escolas.',
     initialValue: 1, targetValue: 3, currentValue: 3,
     deadline: '2025-07-31', responsible: 'Coordenadores escolares',
     status: 'concluida',
@@ -835,7 +835,7 @@ export const actionPlans: ActionPlan[] = [
     problem: 'Ausência de laboratório de informática em 96% das escolas',
     cause: 'Infraestrutura tecnológica precária — dado do Censo INEP 2025: apenas 4% das escolas de Limoeiro de Anadia têm laboratório de informática.',
     action: 'Desenvolver roteiro de atividades analógicas e criar "Kit Empreendedor" físico (cartões, dados, formulários impressos) que substitua os recursos digitais.',
-    responsible: 'Equipe Pedagógica Eleva+',
+    responsible: 'Equipe Pedagógica Acelera+',
     deadline: '2025-08-01',
     resources: 'Equipe de design pedagógico + impressão',
     successIndicator: 'Kit disponível em todas as 5 escolas antes do 3º trimestre',
@@ -921,7 +921,7 @@ export const dashboardStats: DashboardStats = {
   totalStudents: 1056,      // soma das 5 escolas participantes
   totalTeachers: 57,        // soma de professores das 5 escolas
   evaluationResponseRate: 86,
-  avgStudentScore: 6.7,     // média entre IDEB anos iniciais (6.6) e anos finais (5.4) + impacto Eleva+
+  avgStudentScore: 6.7,     // média entre IDEB anos iniciais (6.6) e anos finais (5.4) + impacto Acelera+
   projectExecutionLevel: 79,
   teacherTrainingParticipation: 91,
   teacherSatisfaction: 4.1,

@@ -6,7 +6,7 @@ import type { User } from '@/lib/types';
 
 const roleLabels: Record<string, string> = {
   super_admin: 'Super Administrador',
-  admin_eleva: 'Admin Eleva+',
+  admin_eleva: 'Admin Acelera+',
   secretaria: 'Secretaria de Educação',
   gestor_escolar: 'Gestor Escolar',
   professor: 'Professor',

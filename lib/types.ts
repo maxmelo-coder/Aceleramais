@@ -1,5 +1,5 @@
 // ============================================================
-// Eleva+ Educação Empreendedora — TypeScript Types
+// Acelera+ Escola de Empreendedorismo — TypeScript Types
 // ============================================================
 
 export type UserRole =

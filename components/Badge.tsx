@@ -28,7 +28,7 @@ export default function Badge({ label, variant = 'gray', size = 'sm' }: BadgePro
 export const roleBadge = (role: string) => {
   const map: Record<string, { label: string; variant: BadgeProps['variant'] }> = {
     super_admin: { label: 'Super Admin', variant: 'purple' },
-    admin_eleva: { label: 'Admin Eleva+', variant: 'orange' },
+    admin_eleva: { label: 'Admin Acelera+', variant: 'orange' },
     secretaria: { label: 'Secretaria', variant: 'blue' },
     gestor_escolar: { label: 'Gestor Escolar', variant: 'green' },
     professor: { label: 'Professor', variant: 'gray' },

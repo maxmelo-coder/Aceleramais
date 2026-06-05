@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Eleva+ Educação Empreendedora",
+  title: "Acelera+ Escola de Empreendedorismo",
   description: "Plataforma de Gestão Pedagógica para Educação Empreendedora",
 };
 

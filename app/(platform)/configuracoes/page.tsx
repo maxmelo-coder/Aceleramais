@@ -60,7 +60,7 @@ export default function ConfiguracoesGeraisPage() {
         <h3 className="font-semibold text-gray-900 border-b border-gray-100 pb-3">Dados Institucionais</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { label: 'Nome da plataforma', value: 'Eleva+ Educação Empreendedora' },
+            { label: 'Nome da plataforma', value: 'Acelera+ Escola de Empreendedorismo' },
             { label: 'Nome do projeto', value: projectConfig.projectName },
             { label: 'Empresa responsável', value: projectConfig.company },
             { label: 'Município/Rede', value: projectConfig.networkName },

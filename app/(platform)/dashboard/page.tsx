@@ -60,13 +60,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Índice Eleva+ em destaque */}
+      {/* Índice Acelera+ em destaque */}
       <div className="bg-[#060606] rounded-2xl p-6 flex flex-wrap items-center gap-6">
         <div className="flex-shrink-0">
           <Gauge
             value={stats.elevaIndex}
             color={indexColors[stats.elevaIndexLevel]}
-            label="Índice Eleva+"
+            label="Índice Acelera+"
             size={120}
           />
         </div>
@@ -80,7 +80,7 @@ export default function Dashboard() {
               {indexLabels[stats.elevaIndexLevel]}
             </span>
           </div>
-          <p className="text-white font-semibold">Índice Eleva+ de Execução do Projeto</p>
+          <p className="text-white font-semibold">Índice Acelera+ de Execução do Projeto</p>
           <p className="text-white/50 text-sm mt-1">
             Calculado com base em participação, desempenho, uso do material, formações, evidências e metas SMART.
           </p>
@@ -177,7 +177,7 @@ export default function Dashboard() {
         {/* School ranking */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Ranking de Escolas — Índice Eleva+</h3>
+            <h3 className="font-semibold text-gray-900">Ranking de Escolas — Índice Acelera+</h3>
             <IconTrend size={16} className="text-[#2E8C99]" />
           </div>
           <div className="space-y-3">

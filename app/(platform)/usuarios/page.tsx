@@ -29,7 +29,7 @@ export default function UsuariosPage() {
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {[
           { role: 'super_admin', label: 'Super Admin' },
-          { role: 'admin_eleva', label: 'Admin Eleva+' },
+          { role: 'admin_eleva', label: 'Admin Acelera+' },
           { role: 'secretaria', label: 'Secretaria' },
           { role: 'gestor_escolar', label: 'Gestor' },
           { role: 'professor', label: 'Professor' },

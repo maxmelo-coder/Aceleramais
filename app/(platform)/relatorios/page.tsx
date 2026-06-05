@@ -60,7 +60,7 @@ export default function RelatoriosPage() {
             <h2 className="text-white font-bold text-lg mb-4">Relatório Geral — Rede Municipal de Ensino</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { label: 'Índice Eleva+', value: `${dashboardStats.elevaIndex}%`, color: '#F48B1B' },
+                { label: 'Índice Acelera+', value: `${dashboardStats.elevaIndex}%`, color: '#F48B1B' },
                 { label: 'Média estudantes', value: dashboardStats.avgStudentScore.toFixed(1), color: '#2E8C99' },
                 { label: 'Participação', value: `${dashboardStats.evaluationResponseRate}%`, color: '#4BAAB6' },
                 { label: 'Satisfação docente', value: `${dashboardStats.teacherSatisfaction}/5`, color: '#059669' },

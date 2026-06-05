@@ -57,13 +57,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo area */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[#F48B1B] flex items-center justify-center text-white font-black text-sm">E+</div>
-              <span className="font-bold text-base text-white leading-none">Eleva+</span>
-            </div>
-            <p className="text-[10px] text-white/40 mt-0.5 ml-9">Educação Empreendedora</p>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div className="flex items-center">
+            <img src="/logo.png" alt="Acelera+" className="h-10 w-auto brightness-0 invert" />
           </div>
           <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white p-1">
             <IconX size={18} />

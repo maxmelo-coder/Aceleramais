@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { IconCheck, IconEye } from '@/components/Icons';
 
 const USERS = [
-  { email: 'admin@eleva.com.br',       password: 'Eleva@2025',    name: 'Administrador Eleva+',     role: 'Super Administrador' },
+  { email: 'admin@eleva.com.br',       password: 'Eleva@2025',    name: 'Administrador Acelera+',     role: 'Super Administrador' },
   { email: 'secretaria@limoeiro.al.gov.br', password: 'Sec@2025', name: 'Sec. Francisco das Chagas', role: 'Secretaria Municipal' },
   { email: 'gestor@escola.edu.br',      password: 'Gestor@2025',   name: 'Gestor Escolar',           role: 'Gestor Escolar' },
 ];
@@ -45,12 +45,8 @@ export default function ElevaLogin() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between w-2/5 bg-[#060606] p-12">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#F48B1B] flex items-center justify-center text-white font-black text-lg">E+</div>
-            <div>
-              <p className="text-white font-bold text-xl leading-none">Eleva+</p>
-              <p className="text-white/40 text-xs">Educação Empreendedora</p>
-            </div>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="Acelera+" className="h-12 w-auto brightness-0 invert" />
           </div>
 
           <div className="mt-16">
@@ -90,9 +86,8 @@ export default function ElevaLogin() {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-[#F48B1B] flex items-center justify-center text-white font-black">E+</div>
-            <span className="font-bold text-xl text-gray-900">Eleva+</span>
+          <div className="flex items-center mb-8 lg:hidden">
+            <img src="/logo.png" alt="Acelera+" className="h-10 w-auto" />
           </div>
 
           <div>

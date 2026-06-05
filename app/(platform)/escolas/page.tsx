@@ -69,7 +69,7 @@ export default function EscolasPage() {
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Turmas</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Alunos</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Participação</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Índice Eleva+</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Índice Acelera+</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                 <th className="px-4 py-3" />
               </tr>
