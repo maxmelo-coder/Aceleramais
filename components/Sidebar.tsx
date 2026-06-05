@@ -57,9 +57,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo area */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-          <div className="flex items-center">
-            <img src="/logo.png" alt="Acelera+" className="h-10 w-auto brightness-0 invert" />
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="flex items-center bg-white rounded-xl px-3 py-2 w-full mr-2">
+            <img src="/logo.png" alt="Acelera+" className="h-9 w-auto object-contain" />
           </div>
           <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white p-1">
             <IconX size={18} />
