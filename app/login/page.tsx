@@ -45,8 +45,9 @@ export default function ElevaLogin() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between w-2/5 bg-[#060606] p-12">
         <div>
-          <div className="flex items-center">
-            <img src="/logo.png" alt="Acelera+" className="h-12 w-auto brightness-0 invert" />
+          <div>
+            <p className="text-4xl font-black text-[#F48B1B] leading-none tracking-tight">Acelera+</p>
+            <p className="text-base text-white mt-1">Escola de empreendedorismo</p>
           </div>
 
           <div className="mt-16">
