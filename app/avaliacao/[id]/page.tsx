@@ -1,43 +1,36 @@
 'use client';
 import React, { useState } from 'react';
 import { storageGet, storageSet } from '@/lib/storage';
+import { getBancoQuestoesBySerie } from '@/lib/banco-questoes';
+import type { BancoQuestoes } from '@/lib/banco-questoes';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface EstudanteResposta {
+interface RespostaEstudante {
   id: string;
-  avaliacaoId: string;
-  submittedAt: string;
-  // Etapa 1
-  nome: string;
+  assessmentId: string;
+  studentName: string;
   cidade: string;
   escola: string;
   turma: string;
   professor: string;
   serie: string;
-  // Etapa 2
-  e2_aprendeu: number;
-  e2_material: number;
-  e2_facilidade: number;
-  e2_criouIdeias: number;
-  e2_quer_empreender: number;
-  e2_moduloFavorito: string;
-  // Etapa 3
-  e3_iniciativa: number;
-  e3_criatividade: number;
-  e3_resolucao: number;
-  e3_equipe: number;
-  e3_comunicacao: number;
-  // Etapa 4
-  e4_nps: number;
-  e4_gostou: string;
-  e4_melhorar: string;
+  respostas: Record<string, string>;
+  score: number;
+  acertos: number;
+  totalQuestoes: number;
+  nps: number;
+  satisfacao: number;
+  moduloFavorito: string;
+  gostou: string;
+  melhorar: string;
+  submittedAt: string;
 }
 
 // ─── Scale visual for students ────────────────────────────────────────────────
 const SCALE_COLORS = ['', 'bg-red-500 text-white', 'bg-orange-400 text-white', 'bg-yellow-400 text-gray-900', 'bg-lime-500 text-white', 'bg-green-600 text-white'];
 
 function EmojiScale({ label, sublabels, value, onChange }: { label: string; sublabels?: [string, string]; value: number; onChange: (v: number) => void }) {
-  const emojis = ['', '😞', '😕', '😐', '😊', '😄'];
+  const emojis = ['', '😞', '😕', '😐', '🙂', '😊'];
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
       <p className="font-medium text-gray-900 text-sm">{label}</p>
@@ -76,17 +69,15 @@ function NPSGrid({ value, onChange }: { value: number; onChange: (v: number) => 
   );
 }
 
-const STEP_LABELS = ['Identificação', 'Avaliação do Módulo', 'Competências', 'NPS & Envio'];
-
 export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ id: string }> }) {
-  // Note: params may be a promise in Next.js 16; for simplicity we use React.use
   const resolvedParams = React.use ? React.use(params as unknown as Promise<{ id: string }>) : (params as unknown as { id: string });
   const avaliacaoId = resolvedParams?.id ?? 'default';
 
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [resultado, setResultado] = useState<{ acertos: number; score: number } | null>(null);
 
-  // Etapa 1
+  // Etapa 1 - Identificação
   const [nome, setNome] = useState('');
   const [cidade, setCidade] = useState('');
   const [escola, setEscola] = useState('');
@@ -95,25 +86,35 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
   const [serie, setSerie] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Etapa 2
-  const [e2_aprendeu, setE2aprendeu] = useState(0);
-  const [e2_material, setE2material] = useState(0);
-  const [e2_facilidade, setE2facilidade] = useState(0);
-  const [e2_criouIdeias, setE2criouIdeias] = useState(0);
-  const [e2_quer, setE2quer] = useState(0);
-  const [e2_modulo, setE2modulo] = useState('');
+  // Etapa 2 - Questões diagnósticas
+  const [respostasQuestoes, setRespostasQuestoes] = useState<Record<string, string>>({});
 
-  // Etapa 3
-  const [e3_iniciativa, setE3iniciativa] = useState(0);
-  const [e3_criatividade, setE3criatividade] = useState(0);
-  const [e3_resolucao, setE3resolucao] = useState(0);
-  const [e3_equipe, setE3equipe] = useState(0);
-  const [e3_comunicacao, setE3comunicacao] = useState(0);
+  // Etapa 3 - Percepção e NPS
+  const [satisfacao, setSatisfacao] = useState(0);
+  const [aprendeu, setAprendeu] = useState(0);
+  const [moduloFavorito, setModuloFavorito] = useState('');
+  const [nps, setNps] = useState(-1);
+  const [gostou, setGostou] = useState('');
+  const [melhorar, setMelhorar] = useState('');
 
-  // Etapa 4
-  const [e4_nps, setE4nps] = useState(-1);
-  const [e4_gostou, setE4gostou] = useState('');
-  const [e4_melhorar, setE4melhorar] = useState('');
+  // Derive banco de questões from série
+  const bancoQuestoes: BancoQuestoes | undefined = serie ? getBancoQuestoesBySerie(serie) : undefined;
+  const totalEtapas = bancoQuestoes ? 4 : 3;
+
+  // Step labels depend on whether there's a banco de questões
+  const stepLabels = bancoQuestoes
+    ? ['Identificação', 'Questões', 'Percepção', 'Resultado']
+    : ['Identificação', 'Percepção', 'Resultado'];
+
+  // Map logical step to rendered label index for progress bar
+  function getStepLabel(s: number) {
+    return stepLabels[s] ?? stepLabels[stepLabels.length - 1];
+  }
+
+  function respondidas() {
+    if (!bancoQuestoes) return 0;
+    return bancoQuestoes.questoes.filter(q => respostasQuestoes[q.id]).length;
+  }
 
   function validateStep0() {
     const errs: Record<string, string> = {};
@@ -127,19 +128,66 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
     setStep(s => s + 1);
   }
 
+  function prevStep() {
+    setStep(s => Math.max(0, s - 1));
+  }
+
+  function calcularResultado() {
+    if (!bancoQuestoes) return { acertos: 0, score: 0 };
+    const acertos = bancoQuestoes.questoes.filter(q => respostasQuestoes[q.id] === q.correta).length;
+    const score = parseFloat(((acertos / bancoQuestoes.questoes.length) * 10).toFixed(1));
+    return { acertos, score };
+  }
+
   function handleSubmit() {
-    const resposta: EstudanteResposta = {
-      id: 'est' + Date.now(),
-      avaliacaoId,
+    const { acertos, score } = calcularResultado();
+    setResultado({ acertos, score });
+
+    const resposta: RespostaEstudante = {
+      id: 'resp_' + Date.now(),
+      assessmentId: avaliacaoId,
+      studentName: nome,
+      cidade,
+      escola,
+      turma,
+      professor,
+      serie,
+      respostas: respostasQuestoes,
+      score,
+      acertos,
+      totalQuestoes: bancoQuestoes ? bancoQuestoes.questoes.length : 0,
+      nps,
+      satisfacao,
+      moduloFavorito,
+      gostou,
+      melhorar,
       submittedAt: new Date().toISOString(),
-      nome, cidade, escola, turma, professor, serie,
-      e2_aprendeu, e2_material, e2_facilidade, e2_criouIdeias, e2_quer_empreender: e2_quer, e2_moduloFavorito: e2_modulo,
-      e3_iniciativa, e3_criatividade, e3_resolucao, e3_equipe, e3_comunicacao,
-      e4_nps, e4_gostou, e4_melhorar,
     };
-    const existing = storageGet<EstudanteResposta[]>('acelera_respostas_estudantes', []);
+    const existing = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
     storageSet('acelera_respostas_estudantes', [...existing, resposta]);
     setSubmitted(true);
+  }
+
+  // ── Step index mapping (with or without questoes step) ──
+  // step 0 = Identificação
+  // step 1 = Questões (if banco) OR Percepção (if no banco)
+  // step 2 = Percepção (if banco) OR submit leads to result
+  // step 3 = last step before submit (if banco)
+  const percepStep = bancoQuestoes ? 2 : 1;
+  const lastStep = bancoQuestoes ? 3 : 2;
+
+  // Score color
+  function scoreColor(score: number) {
+    if (score >= 7) return 'bg-green-500';
+    if (score >= 5) return 'bg-orange-400';
+    return 'bg-red-500';
+  }
+
+  function scoreMsg(score: number) {
+    if (score >= 9) return 'Excelente! Você domina muito bem o conteúdo!';
+    if (score >= 7) return 'Muito bom! Continue se dedicando!';
+    if (score >= 5) return 'Bom trabalho! Há espaço para crescer ainda mais.';
+    return 'Continue estudando! Cada erro é uma oportunidade de aprender.';
   }
 
   return (
@@ -162,18 +210,18 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
         <div className="bg-white border-b border-gray-100">
           <div className="max-w-2xl mx-auto px-4 py-3">
             <div className="flex items-center gap-2 mb-2">
-              {STEP_LABELS.map((label, i) => (
+              {stepLabels.map((label, i) => (
                 <React.Fragment key={i}>
                   <div className="flex items-center gap-1.5">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${step >= i ? 'bg-[#F48B1B] text-white' : 'bg-gray-200 text-gray-500'}`}>{i+1}</div>
                     <span className={`text-xs font-medium hidden sm:block ${step >= i ? 'text-gray-800' : 'text-gray-400'}`}>{label}</span>
                   </div>
-                  {i < STEP_LABELS.length - 1 && <div className={`flex-1 h-0.5 transition-colors ${step > i ? 'bg-[#F48B1B]' : 'bg-gray-200'}`} />}
+                  {i < stepLabels.length - 1 && <div className={`flex-1 h-0.5 transition-colors ${step > i ? 'bg-[#F48B1B]' : 'bg-gray-200'}`} />}
                 </React.Fragment>
               ))}
             </div>
             <div className="w-full h-1.5 bg-gray-100 rounded-full">
-              <div className="h-full bg-[#F48B1B] rounded-full transition-all" style={{ width: `${((step+1)/STEP_LABELS.length)*100}%` }} />
+              <div className="h-full bg-[#F48B1B] rounded-full transition-all" style={{ width: `${((step+1)/totalEtapas)*100}%` }} />
             </div>
           </div>
         </div>
@@ -228,68 +276,96 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
             </div>
           )}
 
-          {/* ── Etapa 2 – Avaliação do Módulo ───────────────────────────── */}
-          {!submitted && step === 1 && (
+          {/* ── Etapa 2 – Questões Diagnósticas (only when bancoQuestoes exists) ── */}
+          {!submitted && step === 1 && bancoQuestoes && (
             <div className="space-y-4">
               <div className="bg-white rounded-2xl p-5 border border-gray-100">
-                <h1 className="text-xl font-bold text-gray-900">Como foi o programa?</h1>
+                <h1 className="text-xl font-bold text-gray-900">{bancoQuestoes.titulo}</h1>
+                <p className="text-sm text-gray-500 mt-1">Módulo: {bancoQuestoes.modulo} · {bancoQuestoes.questoes.length} questões</p>
+                {/* Progress bar showing answered questions */}
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Questões respondidas</span>
+                    <span className="font-semibold text-[#F48B1B]">{respondidas()} / {bancoQuestoes.questoes.length}</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-100 rounded-full">
+                    <div className="h-full bg-[#F48B1B] rounded-full transition-all" style={{ width: `${(respondidas() / bancoQuestoes.questoes.length) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              {bancoQuestoes.questoes.map(q => (
+                <div key={q.id} className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#F48B1B] text-white text-sm font-bold flex items-center justify-center">
+                      {q.numero}
+                    </span>
+                    <p className="text-sm text-gray-800 font-medium leading-relaxed pt-1">{q.enunciado}</p>
+                  </div>
+                  <div className="space-y-2">
+                    {q.opcoes.map(op => (
+                      <button key={op.letra} type="button"
+                        onClick={() => setRespostasQuestoes(prev => ({ ...prev, [q.id]: op.letra }))}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm text-left transition-all ${
+                          respostasQuestoes[q.id] === op.letra
+                            ? 'bg-[#F48B1B] text-white border-[#F48B1B]'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-[#F48B1B]/50 hover:bg-orange-50'
+                        }`}>
+                        <span className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                          respostasQuestoes[q.id] === op.letra ? 'border-white text-white' : 'border-gray-300 text-gray-500'
+                        }`}>{op.letra}</span>
+                        <span>{op.texto}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex gap-3">
+                <button onClick={prevStep} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">← Voltar</button>
+                <button onClick={next} className="flex-1 bg-[#F48B1B] hover:bg-[#D4720E] text-white py-3 rounded-xl font-semibold text-sm transition-colors">
+                  Próximo →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Etapa Percepção e NPS ────────────────────────────────────────── */}
+          {!submitted && step === percepStep && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl p-5 border border-gray-100">
+                <h1 className="text-xl font-bold text-gray-900">Sua opinião sobre o programa</h1>
                 <p className="text-sm text-gray-500 mt-1">Avalie de 1 (ruim) a 5 (ótimo)</p>
               </div>
-              <EmojiScale label="Você aprendeu algo útil para sua vida?" sublabels={['Não aprendi nada','Aprendi muito']} value={e2_aprendeu} onChange={setE2aprendeu} />
-              <EmojiScale label="O material didático foi interessante?" sublabels={['Muito chato','Muito interessante']} value={e2_material} onChange={setE2material} />
-              <EmojiScale label="As atividades foram fáceis de entender?" sublabels={['Muito difícil','Muito fácil']} value={e2_facilidade} onChange={setE2facilidade} />
-              <EmojiScale label="Você conseguiu criar ideias de negócios?" sublabels={['Não consegui','Sim, várias ideias']} value={e2_criouIdeias} onChange={setE2criouIdeias} />
-              <EmojiScale label="Você gostaria de empreender no futuro?" sublabels={['Não tenho interesse','Tenho muito interesse']} value={e2_quer} onChange={setE2quer} />
+
+              <EmojiScale
+                label="Como você avalia o programa Acelera+?"
+                sublabels={['Muito ruim', 'Excelente']}
+                value={satisfacao}
+                onChange={setSatisfacao}
+              />
+              <EmojiScale
+                label="Você aprendeu algo útil para sua vida?"
+                sublabels={['Não aprendi nada', 'Aprendi muito']}
+                value={aprendeu}
+                onChange={setAprendeu}
+              />
 
               <div className="bg-white rounded-2xl border border-gray-100 p-5">
                 <p className="font-medium text-gray-900 text-sm mb-3">Qual módulo você mais gostou?</p>
                 <div className="flex flex-wrap gap-2">
                   {['Negócios','Educação Financeira','Inovação','Comunicação'].map(m => (
-                    <button key={m} type="button" onClick={() => setE2modulo(m)}
-                      className={`px-4 py-2 rounded-xl text-sm border-2 font-medium transition-colors ${e2_modulo === m ? 'bg-[#F48B1B] text-white border-[#F48B1B]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                    <button key={m} type="button" onClick={() => setModuloFavorito(m)}
+                      className={`px-4 py-2 rounded-xl text-sm border-2 font-medium transition-colors ${moduloFavorito === m ? 'bg-[#F48B1B] text-white border-[#F48B1B]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
                       {m}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button onClick={() => setStep(0)} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">← Voltar</button>
-                <button onClick={next} className="flex-1 bg-[#F48B1B] hover:bg-[#D4720E] text-white py-3 rounded-xl font-semibold text-sm transition-colors">Próximo →</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Etapa 3 – Competências ───────────────────────────────────── */}
-          {!submitted && step === 2 && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl p-5 border border-gray-100">
-                <h1 className="text-xl font-bold text-gray-900">Suas competências</h1>
-                <p className="text-sm text-gray-500 mt-1">Como você se sente agora comparado ao início?</p>
-              </div>
-              <EmojiScale label="Tenho iniciativa para propor soluções" value={e3_iniciativa} onChange={setE3iniciativa} />
-              <EmojiScale label="Consigo criar ideias novas e diferentes" value={e3_criatividade} onChange={setE3criatividade} />
-              <EmojiScale label="Consigo resolver problemas com calma" value={e3_resolucao} onChange={setE3resolucao} />
-              <EmojiScale label="Sei trabalhar bem em equipe" value={e3_equipe} onChange={setE3equipe} />
-              <EmojiScale label="Consigo me comunicar melhor" value={e3_comunicacao} onChange={setE3comunicacao} />
-              <div className="flex gap-3">
-                <button onClick={() => setStep(1)} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">← Voltar</button>
-                <button onClick={next} className="flex-1 bg-[#F48B1B] hover:bg-[#D4720E] text-white py-3 rounded-xl font-semibold text-sm transition-colors">Próximo →</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Etapa 4 – NPS + Envio ────────────────────────────────────── */}
-          {!submitted && step === 3 && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl p-5 border border-gray-100">
-                <h1 className="text-xl font-bold text-gray-900">Última etapa!</h1>
-                <p className="text-sm text-gray-500 mt-1">Sua opinião é muito importante para nós.</p>
-              </div>
-
               <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
                 <p className="font-medium text-gray-900 text-sm">Em uma escala de 0 a 10, qual a probabilidade de você recomendar o programa para um amigo?</p>
-                <NPSGrid value={e4_nps} onChange={setE4nps} />
+                <NPSGrid value={nps} onChange={setNps} />
                 <div className="flex justify-between text-xs text-gray-400">
                   <span>0 = Muito improvável</span>
                   <span>10 = Com certeza!</span>
@@ -300,17 +376,61 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">O que você mais gostou do programa? (opcional)</label>
                   <textarea className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30" rows={3}
-                    value={e4_gostou} onChange={e => setE4gostou(e.target.value)} placeholder="Escreva aqui..." />
+                    value={gostou} onChange={e => setGostou(e.target.value)} placeholder="Escreva aqui..." />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">O que poderia ser melhor? (opcional)</label>
                   <textarea className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30" rows={3}
-                    value={e4_melhorar} onChange={e => setE4melhorar(e.target.value)} placeholder="Escreva aqui..." />
+                    value={melhorar} onChange={e => setMelhorar(e.target.value)} placeholder="Escreva aqui..." />
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => setStep(2)} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">← Voltar</button>
+                <button onClick={prevStep} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">← Voltar</button>
+                {bancoQuestoes ? (
+                  <button onClick={next} className="flex-1 bg-[#F48B1B] hover:bg-[#D4720E] text-white py-3 rounded-xl font-semibold text-sm transition-colors">
+                    Ver resultado →
+                  </button>
+                ) : (
+                  <button onClick={handleSubmit} className="flex-1 bg-[#F48B1B] hover:bg-[#D4720E] text-white py-3 rounded-xl font-semibold text-sm transition-colors">
+                    Enviar avaliação ✓
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Etapa Resultado (only when there's banco de questões) ──────── */}
+          {!submitted && step === lastStep && bancoQuestoes && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl p-5 border border-gray-100">
+                <h1 className="text-xl font-bold text-gray-900">Quase lá!</h1>
+                <p className="text-sm text-gray-500 mt-1">Revise e envie sua avaliação.</p>
+              </div>
+
+              {/* Preview resultado antes de enviar */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <p className="text-sm font-medium text-gray-700 mb-4">Resumo das suas respostas:</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-[#F48B1B]">{respondidas()}</p>
+                    <p className="text-xs text-gray-500">respondidas</p>
+                  </div>
+                  <div className="flex-1 h-px bg-gray-100" />
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-400">{bancoQuestoes.questoes.length - respondidas()}</p>
+                    <p className="text-xs text-gray-500">em branco</p>
+                  </div>
+                </div>
+                {bancoQuestoes.questoes.length - respondidas() > 0 && (
+                  <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mt-4">
+                    Você deixou {bancoQuestoes.questoes.length - respondidas()} questão(ões) sem resposta. Você ainda pode voltar para respondê-las.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={prevStep} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">← Voltar</button>
                 <button onClick={handleSubmit} className="flex-1 bg-[#F48B1B] hover:bg-[#D4720E] text-white py-3 rounded-xl font-semibold text-sm transition-colors">
                   Enviar avaliação ✓
                 </button>
@@ -318,18 +438,41 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
             </div>
           )}
 
-          {/* ── Confirmação ──────────────────────────────────────────────── */}
+          {/* ── Confirmação + Resultado ───────────────────────────────────── */}
           {submitted && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center space-y-6">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20,6 9,17 4,12"/></svg>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Obrigado pela sua participação!</h1>
-              <p className="text-gray-500 text-sm max-w-sm mx-auto mb-2">Sua avaliação foi registrada com sucesso.</p>
-              <p className="text-[#2E8C99] font-semibold text-lg">{nome}</p>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">Obrigado pela sua participação!</h1>
+                <p className="text-[#2E8C99] font-semibold text-lg">{nome}</p>
+              </div>
+
+              {resultado && bancoQuestoes && (
+                <div className="bg-gray-50 rounded-2xl p-6 space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Você acertou <span className="font-bold text-gray-900">{resultado.acertos} de {bancoQuestoes.questoes.length}</span> questões
+                  </p>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Nota:</span>
+                      <span className="text-3xl font-bold text-[#F48B1B]">{resultado.score.toFixed(1)}</span>
+                    </div>
+                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${scoreColor(resultado.score)}`}
+                        style={{ width: `${resultado.score * 10}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 font-medium">{scoreMsg(resultado.score)}</p>
+                </div>
+              )}
+
               <a href="/"
-                className="mt-8 inline-block bg-[#F48B1B] hover:bg-[#D4720E] text-white px-8 py-3 rounded-xl font-semibold text-sm transition-colors">
-                Voltar ao início
+                className="inline-block bg-[#F48B1B] hover:bg-[#D4720E] text-white px-8 py-3 rounded-xl font-semibold text-sm transition-colors">
+                Finalizar
               </a>
             </div>
           )}

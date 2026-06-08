@@ -6,6 +6,7 @@ import { IconEval, IconPlus, IconEdit, IconEye, IconX, IconSave, IconLink } from
 import { useMunicipio } from '@/lib/municipio-context';
 import { storageGet, storageSet } from '@/lib/storage';
 import type { DiagnosticAssessment, EvaluationStatus, EtapaEnsino } from '@/lib/types';
+import { getBancoQuestoesBySerie } from '@/lib/banco-questoes';
 
 const TrashIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -27,6 +28,27 @@ const statusConfig: Record<EvaluationStatus, { label: string; variant: 'yellow' 
   encerrada: { label: 'Encerrada', variant: 'gray'   },
 };
 
+interface RespostaEstudante {
+  id: string;
+  assessmentId: string;
+  studentName: string;
+  cidade: string;
+  escola: string;
+  turma: string;
+  professor: string;
+  serie: string;
+  respostas: Record<string, string>;
+  score: number;
+  acertos: number;
+  totalQuestoes: number;
+  nps: number;
+  satisfacao: number;
+  moduloFavorito: string;
+  gostou: string;
+  melhorar: string;
+  submittedAt: string;
+}
+
 function emptyForm() {
   return {
     id: '',
@@ -39,11 +61,34 @@ function emptyForm() {
   };
 }
 
+function exportCsv(rows: RespostaEstudante[], assessmentTitle: string) {
+  const headers = ['Nome', 'Escola', 'Turma', 'Série', 'Acertos', 'Nota', 'NPS', 'Data'];
+  const lines = rows.map(r => [
+    r.studentName,
+    r.escola,
+    r.turma,
+    r.serie,
+    r.acertos,
+    r.score,
+    r.nps,
+    new Date(r.submittedAt).toLocaleDateString('pt-BR'),
+  ].join(';'));
+  const csv = [headers.join(';'), ...lines].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `respostas-${assessmentTitle.replace(/\s+/g, '-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AvaliacoesPage() {
   const { selected } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Avaliações');
   const [avaliacoes, setAvaliacoes] = useState<DiagnosticAssessment[]>(() => storageGet('acelera_avaliacoes', []));
   const [showModal, setShowModal] = useState(false);
+  const [respostasPanel, setRespostasPanel] = useState<DiagnosticAssessment | null>(null);
 
   useEffect(() => { storageSet('acelera_avaliacoes', avaliacoes); }, [avaliacoes]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
@@ -51,6 +96,9 @@ export default function AvaliacoesPage() {
 
   const publicadas = avaliacoes.filter(a => a.status === 'publicada').length;
   const aplicadas = avaliacoes.filter(a => a.status === 'aplicada').length;
+
+  // Banco de questões notice derived from form serie
+  const formBanco = form ? getBancoQuestoesBySerie(form.serie) : undefined;
 
   function openNew() { setForm(emptyForm()); setSaved(false); setShowModal(true); }
   function openEdit(a: DiagnosticAssessment) {
@@ -81,6 +129,18 @@ export default function AvaliacoesPage() {
     if (!form) return;
     setForm({ ...form, [key]: value } as typeof form);
   }
+
+  // Respostas panel data
+  const todasRespostas = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
+  const respostasFiltradas = respostasPanel
+    ? todasRespostas.filter(r => r.assessmentId === respostasPanel.id)
+    : [];
+  const mediaAcertos = respostasFiltradas.length > 0
+    ? (respostasFiltradas.reduce((s, r) => s + r.acertos, 0) / respostasFiltradas.length).toFixed(1)
+    : '—';
+  const mediaNota = respostasFiltradas.length > 0
+    ? (respostasFiltradas.reduce((s, r) => s + r.score, 0) / respostasFiltradas.length).toFixed(1)
+    : '—';
 
   return (
     <div className="p-6 space-y-6">
@@ -170,7 +230,7 @@ export default function AvaliacoesPage() {
                                   <IconLink size={15} />
                                 </a>
                               )}
-                              <button title="Ver respostas" className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
+                              <button title="Ver respostas" onClick={() => setRespostasPanel(a)} className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
                                 <IconEye size={15} />
                               </button>
                               <button
@@ -208,7 +268,7 @@ export default function AvaliacoesPage() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal Criar/Editar Avaliação */}
       {showModal && form && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -260,6 +320,19 @@ export default function AvaliacoesPage() {
                 <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30"
                   value={form.competencia} onChange={e => setField('competencia', e.target.value)} placeholder="Ex: Empreendedorismo e Inovação" />
               </div>
+
+              {/* Banco de questões notice */}
+              {formBanco && (
+                <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+                  <svg className="flex-shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <div>
+                    <p className="font-semibold">Banco de questões disponível: "{formBanco.titulo}" ({formBanco.questoes.length} questões)</p>
+                    <p className="text-blue-600 mt-0.5">Essas questões serão exibidas automaticamente no formulário público dos estudantes.</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
               <button onClick={closeModal} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">Cancelar</button>
@@ -268,6 +341,106 @@ export default function AvaliacoesPage() {
                 <IconSave size={15} />
                 {saved ? 'Salvo!' : 'Salvar avaliação'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Painel de respostas */}
+      {respostasPanel && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg">Respostas dos estudantes</h3>
+                <p className="text-sm text-gray-500 mt-0.5">{respostasPanel.title}</p>
+              </div>
+              <button onClick={() => setRespostasPanel(null)} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={20} /></button>
+            </div>
+
+            {/* Resumo */}
+            {respostasFiltradas.length > 0 && (
+              <div className="px-6 py-4 border-b border-gray-100 flex gap-6 flex-shrink-0">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#F48B1B]">{respostasFiltradas.length}</p>
+                  <p className="text-xs text-gray-500">estudantes</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#2E8C99]">{mediaAcertos}</p>
+                  <p className="text-xs text-gray-500">média de acertos</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{mediaNota}</p>
+                  <p className="text-xs text-gray-500">nota média</p>
+                </div>
+                <div className="ml-auto flex items-center">
+                  <button
+                    onClick={() => exportCsv(respostasFiltradas, respostasPanel.title)}
+                    className="flex items-center gap-2 bg-[#2E8C99] hover:bg-[#256e78] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Exportar CSV
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-y-auto flex-1">
+              {respostasFiltradas.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <IconEval size={40} className="text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium">Nenhuma resposta ainda</p>
+                  <p className="text-gray-400 text-sm mt-1">Os estudantes precisam acessar o link público e responder.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-gray-50">
+                      <tr className="text-xs text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left font-medium">Nome</th>
+                        <th className="px-6 py-3 text-left font-medium">Escola</th>
+                        <th className="px-6 py-3 text-left font-medium">Turma</th>
+                        <th className="px-6 py-3 text-left font-medium">Série</th>
+                        <th className="px-6 py-3 text-center font-medium">Acertos</th>
+                        <th className="px-6 py-3 text-center font-medium">Nota</th>
+                        <th className="px-6 py-3 text-center font-medium">NPS</th>
+                        <th className="px-6 py-3 text-left font-medium">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {respostasFiltradas.map(r => (
+                        <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-3 font-medium text-gray-900">{r.studentName}</td>
+                          <td className="px-6 py-3 text-gray-600">{r.escola || '—'}</td>
+                          <td className="px-6 py-3 text-gray-600">{r.turma || '—'}</td>
+                          <td className="px-6 py-3 text-gray-600">{r.serie || '—'}</td>
+                          <td className="px-6 py-3 text-center">
+                            {r.totalQuestoes > 0
+                              ? <span className="font-semibold text-gray-800">{r.acertos}/{r.totalQuestoes}</span>
+                              : <span className="text-gray-400">—</span>}
+                          </td>
+                          <td className="px-6 py-3 text-center">
+                            {r.totalQuestoes > 0 ? (
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                r.score >= 7 ? 'bg-green-100 text-green-700' : r.score >= 5 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
+                              }`}>{r.score.toFixed(1)}</span>
+                            ) : <span className="text-gray-400">—</span>}
+                          </td>
+                          <td className="px-6 py-3 text-center">
+                            {r.nps >= 0 ? (
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                r.nps >= 9 ? 'bg-green-100 text-green-700' : r.nps >= 7 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                              }`}>{r.nps}</span>
+                            ) : <span className="text-gray-400">—</span>}
+                          </td>
+                          <td className="px-6 py-3 text-gray-500 text-xs">{new Date(r.submittedAt).toLocaleDateString('pt-BR')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
