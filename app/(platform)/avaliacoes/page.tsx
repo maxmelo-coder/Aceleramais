@@ -83,11 +83,11 @@ function exportCsv(rows: RespostaEstudante[], assessmentTitle: string) {
   URL.revokeObjectURL(url);
 }
 
-// Avaliação pré-semeada com ID fixo para 8º/9º ano
+// Avaliações pré-semeadas com IDs fixos
 const SEED_AVALIACOES: DiagnosticAssessment[] = [
   {
-    id: 'diagnostico-89-negocios-2025',
-    title: 'Avaliação Diagnóstica — Módulo Negócios (8º e 9º ano)',
+    id: 'diagnostico-8ano-negocios-2025',
+    title: 'Avaliação Diagnóstica — Módulo Negócios · 8º ano',
     etapa: 'EF Anos Finais',
     serie: '8º ano',
     trimestre: '2º Trimestre',
@@ -97,20 +97,38 @@ const SEED_AVALIACOES: DiagnosticAssessment[] = [
     totalStudents: 0,
     avgScore: 0,
     createdAt: '2025-01-01T00:00:00.000Z',
-    publicUrl: '/avaliacao/diagnostico-89-negocios-2025',
+    publicUrl: '/avaliacao/diagnostico-8ano-negocios-2025',
+  },
+  {
+    id: 'diagnostico-9ano-negocios-2025',
+    title: 'Avaliação Diagnóstica — Módulo Negócios · 9º ano',
+    etapa: 'EF Anos Finais',
+    serie: '9º ano',
+    trimestre: '2º Trimestre',
+    competencia: 'Empreendedorismo e Negócios',
+    status: 'publicada',
+    respondents: 0,
+    totalStudents: 0,
+    avgScore: 0,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    publicUrl: '/avaliacao/diagnostico-9ano-negocios-2025',
   },
 ];
 
+const SEED_IDS = SEED_AVALIACOES.map(a => a.id);
+
 function initAvaliacoes(): DiagnosticAssessment[] {
   const stored = storageGet<DiagnosticAssessment[]>('acelera_avaliacoes', []);
-  // Garante que a avaliação semeada sempre existe
-  const hasSeed = stored.some(a => a.id === 'diagnostico-89-negocios-2025');
-  if (!hasSeed) {
-    const merged = [...SEED_AVALIACOES, ...stored];
+  // Remove avaliação antiga unificada se existir
+  const withoutOld = stored.filter(a => a.id !== 'diagnostico-89-negocios-2025');
+  // Adiciona seeds que ainda não existem
+  const missingSeed = SEED_AVALIACOES.filter(s => !withoutOld.some(a => a.id === s.id));
+  if (missingSeed.length > 0 || withoutOld.length !== stored.length) {
+    const merged = [...missingSeed, ...withoutOld];
     storageSet('acelera_avaliacoes', merged);
     return merged;
   }
-  return stored;
+  return withoutOld;
 }
 
 export default function AvaliacoesPage() {
