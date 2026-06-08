@@ -50,10 +50,13 @@ export default function MetasSmartPage() {
   const [filterStatus, setFilterStatus] = useState('todos');
   const [metas, setMetas] = useState<SmartGoal[]>(() => storageGet('acelera_metas', []));
   const [showModal, setShowModal] = useState(false);
+  const [viewMeta, setViewMeta] = useState<SmartGoal | null>(null);
 
   useEffect(() => { storageSet('acelera_metas', metas); }, [metas]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
+  const [newCurrent, setNewCurrent] = useState(0);
+  const [newStatus, setNewStatus] = useState<GoalStatus>('em_andamento');
 
   const filtered = metas.filter(m => {
     if (filterMunicipio !== 'todos' && m.municipioId !== filterMunicipio) return false;
@@ -64,30 +67,93 @@ export default function MetasSmartPage() {
   function openNew() { setForm(emptyForm()); setSaved(false); setShowModal(true); }
   function closeModal() { setShowModal(false); setForm(null); setSaved(false); }
 
+  function openEdit(m: SmartGoal) {
+    setForm({
+      id: m.id,
+      title: m.title,
+      municipioId: m.municipioId || '',
+      municipioName: m.municipioName || '',
+      schoolId: m.schoolId || '',
+      responsible: m.responsible,
+      especifica: m.especifica,
+      mensuravel: m.mensuravel,
+      atingivel: m.atingivel,
+      relevante: m.relevante,
+      temporal: m.temporal,
+      deadline: m.deadline,
+      initialValue: m.initialValue,
+      targetValue: m.targetValue,
+      currentValue: m.currentValue,
+      status: m.status,
+      origem: m.origem || '',
+      observations: m.observations || '',
+    });
+    setSaved(false);
+    setShowModal(true);
+  }
+
+  function openView(m: SmartGoal) {
+    setViewMeta(m);
+    setNewCurrent(m.currentValue);
+    setNewStatus(m.status);
+  }
+
+  function updateProgress() {
+    if (!viewMeta) return;
+    setMetas(prev => prev.map(m => m.id === viewMeta.id
+      ? { ...m, currentValue: newCurrent, status: newStatus }
+      : m
+    ));
+    setViewMeta(null);
+  }
+
   function handleSave() {
     if (!form) return;
     if (!form.title.trim()) { alert('Título é obrigatório.'); return; }
     const munName = all.find(m => m.id === form.municipioId)?.name ?? '';
-    setMetas(prev => [...prev, {
-      id: 'mt' + Date.now(),
-      title: form.title,
-      municipioId: form.municipioId || undefined,
-      municipioName: munName || undefined,
-      schoolId: form.schoolId || undefined,
-      responsible: form.responsible,
-      especifica: form.especifica,
-      mensuravel: form.mensuravel,
-      atingivel: form.atingivel,
-      relevante: form.relevante,
-      temporal: form.temporal,
-      deadline: form.deadline,
-      initialValue: Number(form.initialValue),
-      targetValue: Number(form.targetValue),
-      currentValue: Number(form.currentValue),
-      status: form.status,
-      origem: form.origem || undefined,
-      observations: form.observations || undefined,
-    }]);
+    if (form.id) {
+      setMetas(prev => prev.map(m => m.id === form.id ? {
+        ...m,
+        title: form.title,
+        municipioId: form.municipioId || undefined,
+        municipioName: munName || m.municipioName,
+        schoolId: form.schoolId || undefined,
+        responsible: form.responsible,
+        especifica: form.especifica,
+        mensuravel: form.mensuravel,
+        atingivel: form.atingivel,
+        relevante: form.relevante,
+        temporal: form.temporal,
+        deadline: form.deadline,
+        initialValue: Number(form.initialValue),
+        targetValue: Number(form.targetValue),
+        currentValue: Number(form.currentValue),
+        status: form.status,
+        origem: form.origem || undefined,
+        observations: form.observations || undefined,
+      } : m));
+    } else {
+      setMetas(prev => [...prev, {
+        id: 'mt' + Date.now(),
+        title: form.title,
+        municipioId: form.municipioId || undefined,
+        municipioName: munName || undefined,
+        schoolId: form.schoolId || undefined,
+        responsible: form.responsible,
+        especifica: form.especifica,
+        mensuravel: form.mensuravel,
+        atingivel: form.atingivel,
+        relevante: form.relevante,
+        temporal: form.temporal,
+        deadline: form.deadline,
+        initialValue: Number(form.initialValue),
+        targetValue: Number(form.targetValue),
+        currentValue: Number(form.currentValue),
+        status: form.status,
+        origem: form.origem || undefined,
+        observations: form.observations || undefined,
+      }]);
+    }
     setSaved(true);
     setTimeout(closeModal, 1200);
   }
@@ -182,8 +248,8 @@ export default function MetasSmartPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <button className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={14} /></button>
-                  <button className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={14} /></button>
+                  <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={14} /></button>
+                  <button onClick={() => openView(m)} className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={14} /></button>
                   <button
                     onClick={() => { if (confirm('Confirmar exclusão?')) setMetas(prev => prev.filter(x => x.id !== m.id)); }}
                     title="Excluir"
@@ -197,12 +263,76 @@ export default function MetasSmartPage() {
         </div>
       )}
 
+      {/* View Modal */}
+      {viewMeta && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-900 text-lg">Detalhe da Meta</h3>
+              <button onClick={() => setViewMeta(null)} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={20} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <h4 className="font-bold text-gray-900">{viewMeta.title}</h4>
+                {viewMeta.municipioName && <p className="text-xs text-gray-500 mt-1">📍 {viewMeta.municipioName}</p>}
+                {viewMeta.responsible && <p className="text-xs text-gray-500">👤 {viewMeta.responsible}</p>}
+              </div>
+              <div className="bg-blue-50 rounded-xl p-4 space-y-2 text-sm">
+                {viewMeta.especifica && <p><span className="font-semibold text-blue-700">S:</span> {viewMeta.especifica}</p>}
+                {viewMeta.mensuravel && <p><span className="font-semibold text-blue-700">M:</span> {viewMeta.mensuravel}</p>}
+                {viewMeta.atingivel && <p><span className="font-semibold text-blue-700">A:</span> {viewMeta.atingivel}</p>}
+                {viewMeta.relevante && <p><span className="font-semibold text-blue-700">R:</span> {viewMeta.relevante}</p>}
+                {viewMeta.temporal && <p><span className="font-semibold text-blue-700">T:</span> {viewMeta.temporal}</p>}
+              </div>
+              <div>
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Progresso</span>
+                  <span className="font-semibold text-gray-700">{getProgress(viewMeta)}%</span>
+                </div>
+                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${getProgress(viewMeta)}%`, backgroundColor: viewMeta.status === 'atrasada' ? '#EF4444' : viewMeta.status === 'concluida' ? '#10B981' : '#F48B1B' }} />
+                </div>
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>Inicial: {viewMeta.initialValue}</span>
+                  <span>Atual: {viewMeta.currentValue}</span>
+                  <span>Meta: {viewMeta.targetValue}</span>
+                </div>
+              </div>
+              <div className="border-t border-gray-100 pt-4 space-y-3">
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Atualizar Progresso</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Valor atual</label>
+                    <input type="number" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30"
+                      value={newCurrent} onChange={e => setNewCurrent(Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                    <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30"
+                      value={newStatus} onChange={e => setNewStatus(e.target.value as GoalStatus)}>
+                      {(Object.keys(STATUS_CONFIG) as GoalStatus[]).map(s => (
+                        <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <button onClick={updateProgress}
+                  className="w-full bg-[#2E8C99] hover:bg-[#247885] text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                  Salvar Progresso
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal */}
       {showModal && form && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900 text-lg">Nova Meta SMART</h3>
+              <h3 className="font-semibold text-gray-900 text-lg">{form?.id ? 'Editar Meta SMART' : 'Nova Meta SMART'}</h3>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={20} /></button>
             </div>
             <div className="p-6 space-y-4">
@@ -255,6 +385,11 @@ export default function MetasSmartPage() {
                   <label className="block text-xs font-medium text-gray-700 mb-1">Valor meta</label>
                   <input type="number" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30"
                     value={form.targetValue} onChange={e => setField('targetValue', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Valor atual</label>
+                  <input type="number" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30"
+                    value={form.currentValue} onChange={e => setField('currentValue', e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>

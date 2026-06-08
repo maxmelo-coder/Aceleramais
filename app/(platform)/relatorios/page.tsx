@@ -4,7 +4,6 @@ import { LineChart } from '@/components/Charts';
 import Badge from '@/components/Badge';
 import { IconReports, IconDownload, IconEye } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
-import { scoreByTrimester } from '@/lib/mock-data';
 import { storageGet } from '@/lib/storage';
 
 type ReportView = 'por_estudante' | 'por_turma' | 'por_escola' | 'rede_municipal' | 'ranking_municipio';
@@ -49,12 +48,12 @@ export default function RelatoriosPage() {
   // ─── Por Estudante ────────────────────────────────────────────
   function renderPorEstudante() {
     if (estudantes.length === 0) return <EmptyState message="Nenhuma resposta de estudante encontrada" />;
-    const headers = ['Nome', 'Escola', 'Turma', 'Professor', 'Série', 'NPS', 'Data'];
+    const headers = ['Nome', 'Escola', 'Turma', 'Professor', 'Série', 'Acertos', 'Nota', 'NPS', 'Data'];
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-semibold text-gray-900">Respostas dos Estudantes</h3>
-          <button onClick={() => downloadCSV('estudantes.csv', [headers, ...estudantes.map((r: any) => [r.nome, r.escola, r.turma, r.professor, r.serie, r.e4_nps >= 0 ? r.e4_nps : '', new Date(r.submittedAt).toLocaleDateString('pt-BR')])])}
+          <button onClick={() => downloadCSV('estudantes.csv', [headers, ...estudantes.map((r: any) => [r.studentName, r.escola, r.turma, r.professor, r.serie, r.acertos != null ? r.acertos : '', r.score != null ? r.score : '', r.nps >= 0 ? r.nps : '', new Date(r.submittedAt).toLocaleDateString('pt-BR')])])}
             className="flex items-center gap-1.5 text-xs border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium">
             <IconDownload size={13} /> Exportar CSV
           </button>
@@ -67,12 +66,14 @@ export default function RelatoriosPage() {
             <tbody className="divide-y divide-gray-50">
               {estudantes.map((r: any) => (
                 <tr key={r.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{r.nome}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">{r.studentName || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{r.escola || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{r.turma || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{r.professor || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{r.serie || '—'}</td>
-                  <td className="px-4 py-3 text-center font-semibold">{r.e4_nps >= 0 ? r.e4_nps : '—'}</td>
+                  <td className="px-4 py-3 text-center">{r.acertos != null ? r.acertos : '—'}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-[#F48B1B]">{r.score != null ? r.score : '—'}</td>
+                  <td className="px-4 py-3 text-center font-semibold">{r.nps >= 0 ? r.nps : '—'}</td>
                   <td className="px-4 py-3 text-gray-400 text-xs">{new Date(r.submittedAt).toLocaleDateString('pt-BR')}</td>
                 </tr>
               ))}
@@ -96,16 +97,19 @@ export default function RelatoriosPage() {
       turma, count: rs.length,
       escola: (rs[0] as any).escola || '—',
       professor: (rs[0] as any).professor || '—',
-      avgNPS: rs.filter((r: any) => r.e4_nps >= 0).length > 0
-        ? (rs.filter((r: any) => r.e4_nps >= 0).reduce((a: number, r: any) => a + r.e4_nps, 0) / rs.filter((r: any) => r.e4_nps >= 0).length).toFixed(1)
+      avgNPS: rs.filter((r: any) => r.nps >= 0).length > 0
+        ? (rs.filter((r: any) => r.nps >= 0).reduce((a: number, r: any) => a + r.nps, 0) / rs.filter((r: any) => r.nps >= 0).length).toFixed(1)
+        : '—',
+      avgScore: rs.filter((r: any) => r.score != null).length > 0
+        ? (rs.filter((r: any) => r.score != null).reduce((a: number, r: any) => a + r.score, 0) / rs.filter((r: any) => r.score != null).length).toFixed(1)
         : '—',
     }));
-    const headers = ['Turma', 'Escola', 'Professor', 'Estudantes', 'NPS Médio'];
+    const headers = ['Turma', 'Escola', 'Professor', 'Estudantes', 'Nota Média', 'NPS Médio'];
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-semibold text-gray-900">Relatório por Turma</h3>
-          <button onClick={() => downloadCSV('turmas.csv', [headers, ...rows.map(r => [r.turma, r.escola, r.professor, String(r.count), String(r.avgNPS)])])}
+          <button onClick={() => downloadCSV('turmas.csv', [headers, ...rows.map(r => [r.turma, r.escola, r.professor, String(r.count), String(r.avgScore), String(r.avgNPS)])])}
             className="flex items-center gap-1.5 text-xs border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium">
             <IconDownload size={13} /> Exportar CSV
           </button>
@@ -122,6 +126,7 @@ export default function RelatoriosPage() {
                   <td className="px-4 py-3 text-gray-600">{r.escola}</td>
                   <td className="px-4 py-3 text-gray-600">{r.professor}</td>
                   <td className="px-4 py-3 text-center">{r.count}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-[#F48B1B]">{r.avgScore}</td>
                   <td className="px-4 py-3 text-center font-semibold text-[#2E8C99]">{r.avgNPS}</td>
                 </tr>
               ))}
@@ -134,21 +139,29 @@ export default function RelatoriosPage() {
 
   // ─── Por Escola ───────────────────────────────────────────────
   function renderPorEscola() {
-    const all_data = [...estudantes, ...docentes];
-    if (all_data.length === 0) return <EmptyState message="Nenhum dado por escola disponível" />;
-    const byEscola = all_data.reduce((acc: Record<string, any[]>, r: any) => {
+    if (estudantes.length === 0) return <EmptyState message="Nenhum dado por escola disponível" />;
+    const byEscola = estudantes.reduce((acc: Record<string, any[]>, r: any) => {
       const key = r.escola || 'Não informado';
       if (!acc[key]) acc[key] = [];
       acc[key].push(r);
       return acc;
     }, {});
-    const rows = Object.entries(byEscola).map(([escola, rs]) => ({ escola, count: rs.length }));
-    const headers = ['Escola', 'Total de Respostas'];
+    const rows = Object.entries(byEscola).map(([escola, rs]) => ({
+      escola,
+      count: rs.length,
+      avgScore: rs.filter((r: any) => r.score != null).length > 0
+        ? (rs.filter((r: any) => r.score != null).reduce((a: number, r: any) => a + r.score, 0) / rs.filter((r: any) => r.score != null).length).toFixed(1)
+        : '—',
+      avgNPS: rs.filter((r: any) => r.nps >= 0).length > 0
+        ? (rs.filter((r: any) => r.nps >= 0).reduce((a: number, r: any) => a + r.nps, 0) / rs.filter((r: any) => r.nps >= 0).length).toFixed(1)
+        : '—',
+    }));
+    const headers = ['Escola', 'Estudantes', 'Nota Média', 'NPS Médio'];
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-semibold text-gray-900">Relatório por Escola</h3>
-          <button onClick={() => downloadCSV('escolas.csv', [headers, ...rows.map(r => [r.escola, String(r.count)])])}
+          <button onClick={() => downloadCSV('escolas.csv', [headers, ...rows.map(r => [r.escola, String(r.count), String(r.avgScore), String(r.avgNPS)])])}
             className="flex items-center gap-1.5 text-xs border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium">
             <IconDownload size={13} /> Exportar CSV
           </button>
@@ -163,6 +176,8 @@ export default function RelatoriosPage() {
                 <tr key={r.escola} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{r.escola}</td>
                   <td className="px-4 py-3 text-center">{r.count}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-[#F48B1B]">{r.avgScore}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-[#2E8C99]">{r.avgNPS}</td>
                 </tr>
               ))}
             </tbody>
@@ -182,7 +197,9 @@ export default function RelatoriosPage() {
       ['Índice de Implementação Médio', docentes.length > 0 ? Math.round(docentes.reduce((a: number, r: any) => a + (r.indiceImplementacao||0),0)/docentes.length) + '%' : '—'],
       ['Índice de Aprendizagem Médio', docentes.length > 0 ? Math.round(docentes.reduce((a: number, r: any) => a + (r.indiceAprendizagem||0),0)/docentes.length) + '%' : '—'],
       ['Índice de Competências Médio', docentes.length > 0 ? Math.round(docentes.reduce((a: number, r: any) => a + (r.indiceCompetencias||0),0)/docentes.length) + '%' : '—'],
-      ['NPS Estudantes Médio', estudantes.filter((r: any) => r.e4_nps >= 0).length > 0 ? (estudantes.filter((r: any) => r.e4_nps >= 0).reduce((a: number, r: any) => a + r.e4_nps, 0) / estudantes.filter((r: any) => r.e4_nps >= 0).length).toFixed(1) : '—'],
+      ['Nota Média Estudantes', estudantes.filter((r: any) => r.score != null).length > 0 ? (estudantes.filter((r: any) => r.score != null).reduce((a: number, r: any) => a + r.score, 0) / estudantes.filter((r: any) => r.score != null).length).toFixed(1) : '—'],
+      ['Média de Acertos', estudantes.filter((r: any) => r.acertos != null).length > 0 ? (estudantes.filter((r: any) => r.acertos != null).reduce((a: number, r: any) => a + r.acertos, 0) / estudantes.filter((r: any) => r.acertos != null).length).toFixed(1) : '—'],
+      ['NPS Estudantes Médio', estudantes.filter((r: any) => r.nps >= 0).length > 0 ? (estudantes.filter((r: any) => r.nps >= 0).reduce((a: number, r: any) => a + r.nps, 0) / estudantes.filter((r: any) => r.nps >= 0).length).toFixed(1) : '—'],
       ['NPS Professores Médio', docentes.filter((r: any) => r.b9_nps >= 0).length > 0 ? (docentes.filter((r: any) => r.b9_nps >= 0).reduce((a: number, r: any) => a + r.b9_nps, 0) / docentes.filter((r: any) => r.b9_nps >= 0).length).toFixed(1) : '—'],
     ];
     return (
@@ -305,35 +322,81 @@ export default function RelatoriosPage() {
         </div>
       )}
 
-      {tab === 'Gráficos' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Evolução por Trimestre</h3>
-              <Badge label="2025" variant="blue" />
-            </div>
-            {scoreByTrimester.every(d => d.value === 0) ? (
-              <div className="h-40 flex flex-col items-center justify-center text-center">
-                <IconReports size={32} className="text-gray-200 mb-2" />
-                <p className="text-gray-400 text-sm">Nenhum dado disponível</p>
-              </div>
-            ) : (
-              <LineChart data={scoreByTrimester} height={140} />
-            )}
-          </div>
+      {tab === 'Gráficos' && (() => {
+        // Build evolução por mês from student responses
+        const byMonth = estudantes.reduce((acc: Record<string, number[]>, r: any) => {
+          if (r.score == null || !r.submittedAt) return acc;
+          const d = new Date(r.submittedAt);
+          const key = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(r.score);
+          return acc;
+        }, {});
+        const evolucaoData = Object.entries(byMonth).map(([label, vals]) => ({
+          label,
+          value: parseFloat((vals.reduce((a, v) => a + v, 0) / vals.length).toFixed(1)),
+        }));
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Desempenho por Escola</h3>
-              <Badge label={selected.name} variant="orange" />
+        // Build desempenho por escola
+        const byEscolaChart = estudantes.reduce((acc: Record<string, number[]>, r: any) => {
+          if (r.score == null) return acc;
+          const key = r.escola || 'Não informado';
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(r.score);
+          return acc;
+        }, {});
+        const escolaData = Object.entries(byEscolaChart).map(([label, vals]) => ({
+          label,
+          value: parseFloat((vals.reduce((a, v) => a + v, 0) / vals.length).toFixed(1)),
+        }));
+        const maxEscolaVal = escolaData.length > 0 ? Math.max(...escolaData.map(d => d.value)) : 10;
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Evolução por Mês</h3>
+                <Badge label="Nota média" variant="blue" />
+              </div>
+              {evolucaoData.length < 2 ? (
+                <div className="h-40 flex flex-col items-center justify-center text-center">
+                  <IconReports size={32} className="text-gray-200 mb-2" />
+                  <p className="text-gray-400 text-sm">Dados insuficientes (mínimo 2 meses)</p>
+                </div>
+              ) : (
+                <LineChart data={evolucaoData} height={140} />
+              )}
             </div>
-            <div className="h-40 flex flex-col items-center justify-center text-center">
-              <IconReports size={32} className="text-gray-200 mb-2" />
-              <p className="text-gray-400 text-sm">Aguardando dados de desempenho</p>
+
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Desempenho por Escola</h3>
+                <Badge label={selected.name} variant="orange" />
+              </div>
+              {escolaData.length === 0 ? (
+                <div className="h-40 flex flex-col items-center justify-center text-center">
+                  <IconReports size={32} className="text-gray-200 mb-2" />
+                  <p className="text-gray-400 text-sm">Aguardando dados de desempenho</p>
+                </div>
+              ) : (
+                <div className="space-y-2 py-2">
+                  {escolaData.map(d => (
+                    <div key={d.label} className="space-y-0.5">
+                      <div className="flex justify-between text-xs text-gray-600">
+                        <span className="truncate max-w-[60%]">{d.label}</span>
+                        <span className="font-semibold text-[#F48B1B]">{d.value}</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#F48B1B] rounded-full" style={{ width: `${(d.value / maxEscolaVal) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

@@ -1,8 +1,16 @@
 'use client';
 import React, { useState } from 'react';
 import { storageGet, storageSet } from '@/lib/storage';
-import { getBancoQuestoesBySerie } from '@/lib/banco-questoes';
+import { getBancoQuestoesBySerie, getBancoQuestoesById } from '@/lib/banco-questoes';
 import type { BancoQuestoes } from '@/lib/banco-questoes';
+
+// Mapeamento de ID de avaliação → banco de questões e série pré-definida
+const ASSESSMENT_MAP: Record<string, { bancoId: string; serie: string; titulo: string }> = {
+  'diagnostico-8ano-negocios-2025':  { bancoId: 'bq-89-negocios', serie: '8º ano',  titulo: 'Módulo Negócios · 8º ano'  },
+  'diagnostico-9ano-negocios-2025':  { bancoId: 'bq-89-negocios', serie: '9º ano',  titulo: 'Módulo Negócios · 9º ano'  },
+  // avaliação legada unificada
+  'diagnostico-89-negocios-2025':    { bancoId: 'bq-89-negocios', serie: '',         titulo: 'Módulo Negócios · 8º/9º ano' },
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface RespostaEstudante {
@@ -73,17 +81,21 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
   const resolvedParams = React.use ? React.use(params as unknown as Promise<{ id: string }>) : (params as unknown as { id: string });
   const avaliacaoId = resolvedParams?.id ?? 'default';
 
+  // Metadados pré-definidos para este link específico (se existir no mapeamento)
+  const assessmentMeta = ASSESSMENT_MAP[avaliacaoId];
+
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [resultado, setResultado] = useState<{ acertos: number; score: number } | null>(null);
 
   // Etapa 1 - Identificação
+  // Se o link já define a série, pré-preenche e bloqueia o campo
   const [nome, setNome] = useState('');
   const [cidade, setCidade] = useState('');
   const [escola, setEscola] = useState('');
   const [turma, setTurma] = useState('');
   const [professor, setProfessor] = useState('');
-  const [serie, setSerie] = useState('');
+  const [serie, setSerie] = useState(assessmentMeta?.serie ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Etapa 2 - Questões diagnósticas
@@ -97,8 +109,10 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
   const [gostou, setGostou] = useState('');
   const [melhorar, setMelhorar] = useState('');
 
-  // Derive banco de questões from série
-  const bancoQuestoes: BancoQuestoes | undefined = serie ? getBancoQuestoesBySerie(serie) : undefined;
+  // Banco de questões: se o link tem um banco definido, usa direto; caso contrário deriva da série escolhida
+  const bancoQuestoes: BancoQuestoes | undefined = assessmentMeta
+    ? getBancoQuestoesById(assessmentMeta.bancoId)
+    : (serie ? getBancoQuestoesBySerie(serie) : undefined);
   const totalEtapas = bancoQuestoes ? 4 : 3;
 
   // Step labels depend on whether there's a banco de questões
@@ -249,10 +263,16 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Série</label>
-                    <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={serie} onChange={e => setSerie(e.target.value)}>
-                      <option value="">Selecione</option>
-                      {['4º ano','5º ano','6º ano','7º ano','8º ano','9º ano'].map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    {assessmentMeta && assessmentMeta.serie !== '' ? (
+                      <div className="w-full border border-gray-200 bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-700 font-medium">
+                        {assessmentMeta.serie}
+                      </div>
+                    ) : (
+                      <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={serie} onChange={e => setSerie(e.target.value)}>
+                        <option value="">Selecione</option>
+                        {(assessmentMeta ? ['8º ano', '9º ano'] : ['4º ano','5º ano','6º ano','7º ano','8º ano','9º ano']).map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    )}
                   </div>
                 </div>
                 <div>
