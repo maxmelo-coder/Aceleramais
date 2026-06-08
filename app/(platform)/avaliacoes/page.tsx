@@ -83,12 +83,51 @@ function exportCsv(rows: RespostaEstudante[], assessmentTitle: string) {
   URL.revokeObjectURL(url);
 }
 
+// Avaliação pré-semeada com ID fixo para 8º/9º ano
+const SEED_AVALIACOES: DiagnosticAssessment[] = [
+  {
+    id: 'diagnostico-89-negocios-2025',
+    title: 'Avaliação Diagnóstica — Módulo Negócios (8º e 9º ano)',
+    etapa: 'EF Anos Finais',
+    serie: '8º ano',
+    trimestre: '2º Trimestre',
+    competencia: 'Empreendedorismo e Negócios',
+    status: 'publicada',
+    respondents: 0,
+    totalStudents: 0,
+    avgScore: 0,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    publicUrl: '/avaliacao/diagnostico-89-negocios-2025',
+  },
+];
+
+function initAvaliacoes(): DiagnosticAssessment[] {
+  const stored = storageGet<DiagnosticAssessment[]>('acelera_avaliacoes', []);
+  // Garante que a avaliação semeada sempre existe
+  const hasSeed = stored.some(a => a.id === 'diagnostico-89-negocios-2025');
+  if (!hasSeed) {
+    const merged = [...SEED_AVALIACOES, ...stored];
+    storageSet('acelera_avaliacoes', merged);
+    return merged;
+  }
+  return stored;
+}
+
 export default function AvaliacoesPage() {
   const { selected } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Avaliações');
-  const [avaliacoes, setAvaliacoes] = useState<DiagnosticAssessment[]>(() => storageGet('acelera_avaliacoes', []));
+  const [avaliacoes, setAvaliacoes] = useState<DiagnosticAssessment[]>(() => initAvaliacoes());
   const [showModal, setShowModal] = useState(false);
   const [respostasPanel, setRespostasPanel] = useState<DiagnosticAssessment | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function copyLink(id: string) {
+    const url = `${window.location.origin}/avaliacao/${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2500);
+    });
+  }
 
   useEffect(() => { storageSet('acelera_avaliacoes', avaliacoes); }, [avaliacoes]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
@@ -168,6 +207,63 @@ export default function AvaliacoesPage() {
 
       {tab === 'Avaliações' && (
         <>
+          {/* Banner de links ativos */}
+          {avaliacoes.filter(a => a.status === 'publicada').length > 0 && (
+            <div className="bg-gradient-to-r from-[#2E8C99]/10 to-[#F48B1B]/10 border border-[#2E8C99]/20 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E8C99" strokeWidth="2" className="flex-shrink-0">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <span className="font-semibold text-gray-900 text-sm">Links para os estudantes</span>
+                <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {avaliacoes.filter(a => a.status === 'publicada').length} ativo{avaliacoes.filter(a => a.status === 'publicada').length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {avaliacoes.filter(a => a.status === 'publicada').map(a => {
+                  const url = typeof window !== 'undefined' ? `${window.location.origin}/avaliacao/${a.id}` : `/avaliacao/${a.id}`;
+                  const copied = copiedId === a.id;
+                  return (
+                    <div key={a.id} className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-700 truncate">{a.title}</p>
+                        <p className="text-xs text-[#2E8C99] font-mono truncate mt-0.5">{url}</p>
+                      </div>
+                      <a href={url} target="_blank" rel="noopener noreferrer"
+                        className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-medium transition-colors border border-gray-200">
+                        Abrir
+                      </a>
+                      <button onClick={() => copyLink(a.id)}
+                        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          copied
+                            ? 'bg-green-500 text-white border border-green-500'
+                            : 'bg-[#F48B1B] hover:bg-[#D4720E] text-white border border-[#F48B1B]'
+                        }`}>
+                        {copied ? (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20,6 9,17 4,12"/>
+                            </svg>
+                            Copiado!
+                          </>
+                        ) : (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                            Copiar link
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400 mt-3">📱 Compartilhe este link com os estudantes via WhatsApp, e-mail ou projetor.</p>
+            </div>
+          )}
+
           {/* Summary */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <StatCard title="Total" value={avaliacoes.length} icon={<IconEval size={18} />} color="blue" />
@@ -225,10 +321,22 @@ export default function AvaliacoesPage() {
                                 <IconEdit size={15} />
                               </button>
                               {a.status === 'publicada' && (
-                                <a href={`/avaliacao/${a.id}`} target="_blank" rel="noopener noreferrer" title="Ver link público"
-                                  className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
-                                  <IconLink size={15} />
-                                </a>
+                                <>
+                                  <a href={`/avaliacao/${a.id}`} target="_blank" rel="noopener noreferrer" title="Abrir formulário"
+                                    className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
+                                    <IconLink size={15} />
+                                  </a>
+                                  <button onClick={() => copyLink(a.id)} title="Copiar link para estudantes"
+                                    className={`p-1.5 rounded-lg transition-all ${copiedId === a.id ? 'text-green-600 bg-green-50' : 'text-[#F48B1B] hover:bg-orange-50'}`}>
+                                    {copiedId === a.id ? (
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+                                    ) : (
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                      </svg>
+                                    )}
+                                  </button>
+                                </>
                               )}
                               <button title="Ver respostas" onClick={() => setRespostasPanel(a)} className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
                                 <IconEye size={15} />
