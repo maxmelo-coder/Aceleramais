@@ -119,6 +119,30 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* KPIs Automáticos — Índices Docentes */}
+      {(() => {
+        const docenteRespostas = storageGet<any[]>('acelera_forms_docente', []);
+        const count = docenteRespostas.length;
+        const indImpl   = count > 0 ? Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceImplementacao  || 0), 0) / count) : null;
+        const indApre   = count > 0 ? Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceAprendizagem    || 0), 0) / count) : null;
+        const indComp   = count > 0 ? Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceCompetencias    || 0), 0) / count) : null;
+        const indAuto   = count > 0 ? Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceAutoeficacia    || 0), 0) / count) : null;
+        if (count === 0) return null;
+        return (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <IconTeacher size={16} /> Índices Docentes (baseados em {count} resposta{count !== 1 ? 's' : ''})
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <StatCard title="Impl. do Módulo"  value={`${indImpl}%`}  subtitle="média geral"   icon={<IconTeacher size={18} />} color="blue" />
+              <StatCard title="Aprendizagem"      value={`${indApre}%`}  subtitle="média geral"   icon={<IconTeacher size={18} />} color="green" />
+              <StatCard title="Competências"      value={`${indComp}%`}  subtitle="média geral"   icon={<IconTeacher size={18} />} color="orange" />
+              <StatCard title="Autoeficácia Doc." value={`${indAuto}%`}  subtitle="média geral"   icon={<IconTeacher size={18} />} color="purple" />
+            </div>
+          </div>
+        );
+      })()}
+
       {/* KPI Cards — 12 itens */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <StatCard title="Municípios"          value={municipiosData.length}  subtitle="parceiros"               icon={<IconMapPin size={18} />}    color="blue" />
@@ -171,19 +195,49 @@ export default function Dashboard() {
       </div>
 
       {/* Alertas */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-2 mb-4">
-          <IconAlert size={18} className="text-[#F48B1B]" />
-          <h3 className="font-semibold text-gray-900">Alertas e Pendências</h3>
-        </div>
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-3">
-            <IconAlert size={22} className="text-green-400" />
+      {(() => {
+        const docenteRespostas = storageGet<any[]>('acelera_forms_docente', []);
+        const count = docenteRespostas.length;
+        const alertas: { label: string; level: 'red' | 'orange' }[] = [];
+        if (count > 0) {
+          const indices = [
+            { name: 'Implementação do Módulo',  val: Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceImplementacao || 0), 0) / count) },
+            { name: 'Aprendizagem',              val: Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceAprendizagem || 0), 0) / count) },
+            { name: 'Competências',              val: Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceCompetencias || 0), 0) / count) },
+            { name: 'Autoeficácia Docente',      val: Math.round(docenteRespostas.reduce((a: number, r: any) => a + (r.indiceAutoeficacia || 0), 0) / count) },
+          ];
+          for (const idx of indices) {
+            if (idx.val < 60) alertas.push({ label: `Índice de ${idx.name} abaixo de 60% (${idx.val}%) — atenção necessária`, level: 'red' });
+            else if (idx.val < 75) alertas.push({ label: `Índice de ${idx.name} (${idx.val}%) requer atenção`, level: 'orange' });
+          }
+        }
+        return (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <IconAlert size={18} className="text-[#F48B1B]" />
+              <h3 className="font-semibold text-gray-900">Alertas e Pendências</h3>
+            </div>
+            {alertas.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-3">
+                  <IconAlert size={22} className="text-green-400" />
+                </div>
+                <p className="text-gray-500 text-sm font-medium">Nenhum alerta no momento</p>
+                <p className="text-gray-400 text-xs mt-1">Os alertas aparecerão aqui quando houver planos atrasados, avaliações pendentes ou metas em risco.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {alertas.map((a, i) => (
+                  <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${a.level === 'red' ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'}`}>
+                    <IconAlert size={16} className={a.level === 'red' ? 'text-red-500 mt-0.5 flex-shrink-0' : 'text-orange-500 mt-0.5 flex-shrink-0'} />
+                    <p className={`text-sm font-medium ${a.level === 'red' ? 'text-red-700' : 'text-orange-700'}`}>{a.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <p className="text-gray-500 text-sm font-medium">Nenhum alerta no momento</p>
-          <p className="text-gray-400 text-xs mt-1">Os alertas aparecerão aqui quando houver planos atrasados, avaliações pendentes ou metas em risco.</p>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Empty state geral */}
       <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">

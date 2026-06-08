@@ -40,6 +40,7 @@ function emptyForm() {
     status: 'positivo' as FeedbackStatus,
     texto: '',
     trimestre: '2º Trimestre',
+    nps: 5,
   };
 }
 
@@ -222,6 +223,18 @@ export default function FeedbackSecretariaPage() {
                 <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30 resize-none"
                   rows={4} value={form.texto} onChange={e => setField('texto', e.target.value)}
                   placeholder="Descreva o feedback recebido..." />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  NPS da Secretaria: Em uma escala de 0 a 10, como você avalia o programa? — <span className="font-bold text-[#F48B1B]">{form.nps}</span>
+                </label>
+                <input type="range" min={0} max={10} step={1}
+                  className="w-full accent-[#F48B1B]"
+                  value={form.nps}
+                  onChange={e => setField('nps', e.target.value)} />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>0 – Muito ruim</span><span>10 – Excelente</span>
+                </div>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
