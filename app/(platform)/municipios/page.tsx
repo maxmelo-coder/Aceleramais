@@ -167,6 +167,7 @@ export default function MunicipiosPage() {
                             <IconEdit size={15} />
                           </button>
                           <button
+                            onClick={() => openEdit(m)}
                             title="Visualizar"
                             className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"
                           >

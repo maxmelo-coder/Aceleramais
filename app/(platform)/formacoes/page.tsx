@@ -199,7 +199,7 @@ export default function FormacoesPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
                             <button onClick={() => openEdit(s)} title="Editar" className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={15} /></button>
-                            <button className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={15} /></button>
+                            <button onClick={() => openEdit(s)} title="Visualizar" className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={15} /></button>
                             <button
                               onClick={() => { if (confirm('Confirmar exclusão?')) setSessions(prev => prev.filter(x => x.id !== s.id)); }}
                               title="Excluir"

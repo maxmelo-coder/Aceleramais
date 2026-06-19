@@ -7,6 +7,21 @@ import { useMunicipio } from '@/lib/municipio-context';
 import { storageGet, storageSet } from '@/lib/storage';
 import type { ActionPlan, ActionStatus, ActionPriority } from '@/lib/types';
 
+// Normalizes b7 difficulties from both form formats (internal booleans or public array)
+function normalizeDificuldades(r: any): string[] {
+  if (Array.isArray(r.b7_dificuldades) && r.b7_dificuldades.length > 0) return r.b7_dificuldades;
+  const difs: string[] = [];
+  if (r.b7_faltaTempo) difs.push('Falta de tempo');
+  if (r.b7_poucoInteresse) difs.push('Pouco interesse dos estudantes');
+  if (r.b7_dificuldadeConteudo) difs.push('Dificuldade de compreensão dos conteúdos');
+  if (r.b7_faltaRecursos) difs.push('Falta de recursos tecnológicos');
+  if (r.b7_necessidadeFormacao) difs.push('Necessidade de mais formação');
+  if (r.b7_ausenciaApoio) difs.push('Ausência de apoio familiar');
+  if (r.b7_cargaHoraria) difs.push('Carga horária insuficiente');
+  if (r.b7_outros) difs.push(r.b7_outrosTexto || 'Outros');
+  return difs;
+}
+
 const PRIORIDADE_CONFIG: Record<ActionPriority, { label: string; variant: 'gray' | 'blue' | 'orange' | 'red' }> = {
   baixa:   { label: 'Baixa',   variant: 'gray'   },
   media:   { label: 'Média',   variant: 'blue'   },
@@ -111,17 +126,8 @@ export default function PlanoAcaoPage() {
     const avgApre = Math.round(respostas.reduce((a,r) => a+(r.indiceAprendizagem||0),0)/total);
     const difCount: Record<string, number> = {};
     respostas.forEach(r => {
-      ([
-        [r.b7_faltaTempo, 'Falta de tempo'],
-        [r.b7_poucoInteresse, 'Pouco interesse dos estudantes'],
-        [r.b7_dificuldadeConteudo, 'Dificuldade de compreensão dos conteúdos'],
-        [r.b7_faltaRecursos, 'Falta de recursos tecnológicos'],
-        [r.b7_necessidadeFormacao, 'Necessidade de mais formação'],
-        [r.b7_ausenciaApoio, 'Ausência de apoio familiar'],
-        [r.b7_cargaHoraria, 'Carga horária insuficiente'],
-        [r.b7_outros, r.b7_outrosTexto || 'Outros'],
-      ] as [boolean, string][]).forEach(([flag, label]) => {
-        if (flag) difCount[label] = (difCount[label]||0)+1;
+      normalizeDificuldades(r).forEach(label => {
+        difCount[label] = (difCount[label]||0)+1;
       });
     });
     const topDif = Object.entries(difCount).sort((a,b)=>b[1]-a[1])[0];

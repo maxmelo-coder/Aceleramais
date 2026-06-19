@@ -63,11 +63,11 @@ export default function Dashboard() {
             <option value="3">3º Trimestre</option>
             <option value="4">4º Trimestre</option>
           </select>
-          <button className="flex items-center gap-1.5 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white hover:bg-gray-50 transition-colors">
+          <button onClick={() => alert('Use os filtros de Município e Trimestre ao lado para refinar os dados do dashboard.')} className="flex items-center gap-1.5 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white hover:bg-gray-50 transition-colors">
             <IconFilter size={14} />
             <span>Filtros</span>
           </button>
-          <button className="flex items-center gap-1.5 text-sm bg-[#2E8C99] text-white rounded-lg px-3 py-2 hover:bg-[#226E79] transition-colors">
+          <button onClick={() => window.print()} className="flex items-center gap-1.5 text-sm bg-[#2E8C99] text-white rounded-lg px-3 py-2 hover:bg-[#226E79] transition-colors">
             <IconDownload size={14} />
             <span>Exportar</span>
           </button>

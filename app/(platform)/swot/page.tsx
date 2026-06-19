@@ -24,6 +24,23 @@ const ORIGENS: { value: SwotOrigin; label: string }[] = [
   { value: 'manual',    label: 'Manual'    },
 ];
 
+// Normalizes b7 difficulties from both form formats:
+// - Internal form: boolean fields (b7_faltaTempo, b7_poucoInteresse, ...)
+// - Public form: string array (b7_dificuldades: ['Falta de tempo', ...])
+function normalizeDificuldades(r: any): string[] {
+  if (Array.isArray(r.b7_dificuldades) && r.b7_dificuldades.length > 0) return r.b7_dificuldades;
+  const difs: string[] = [];
+  if (r.b7_faltaTempo) difs.push('Falta de tempo');
+  if (r.b7_poucoInteresse) difs.push('Pouco interesse dos estudantes');
+  if (r.b7_dificuldadeConteudo) difs.push('Dificuldade de compreensão dos conteúdos');
+  if (r.b7_faltaRecursos) difs.push('Falta de recursos tecnológicos');
+  if (r.b7_necessidadeFormacao) difs.push('Necessidade de mais formação');
+  if (r.b7_ausenciaApoio) difs.push('Ausência de apoio familiar');
+  if (r.b7_cargaHoraria) difs.push('Carga horária insuficiente');
+  if (r.b7_outros) difs.push(r.b7_outrosTexto || 'Outros');
+  return difs;
+}
+
 function emptyItemForm(cat: SwotCategory) {
   return { texto: '', categoria: cat, origem: 'manual' as SwotOrigin };
 }
@@ -107,7 +124,7 @@ export default function SwotPage() {
       const pct = Math.round(lowNpsStudents.length / estudantes.length * 100);
       newItems.push({ id: now+'_t1', category: 'ameaca', text: `${pct}% dos estudantes são detratores (NPS ≤ 6) — risco de baixo engajamento e evasão.`, origem: 'avaliacao', auto: true, municipioId: filterMunicipio, trimestre: filterTrimestre });
     }
-    const docentesComDificuldades = docentes.filter(r => r.b7_dificuldades && r.b7_dificuldades.length > 0);
+    const docentesComDificuldades = docentes.filter(r => normalizeDificuldades(r).length > 0);
     if (docentesComDificuldades.length > 0) {
       newItems.push({ id: now+'_t2', category: 'ameaca', text: `${docentesComDificuldades.length} professor(es) relataram dificuldades na implementação — requer atenção em formações futuras.`, origem: 'formacao', auto: true, municipioId: filterMunicipio, trimestre: filterTrimestre });
     }

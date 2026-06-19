@@ -198,7 +198,7 @@ export default function TurmasPage() {
                         <button onClick={() => openEdit(t)} title="Editar" className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors">
                           <IconEdit size={15} />
                         </button>
-                        <button title="Ver estudantes" className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
+                        <button onClick={() => alert(`Turma: ${t.name}\nSérie: ${t.serie ?? '—'}\nEscola: ${t.schoolName ?? '—'}\nAlunos: ${t.studentCount ?? 0}\nParticipação: ${t.participationRate}%`)} title="Ver estudantes" className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
                           <IconEye size={15} />
                         </button>
                         <button

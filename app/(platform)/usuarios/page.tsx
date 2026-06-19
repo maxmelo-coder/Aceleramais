@@ -50,7 +50,10 @@ export default function UsuariosPage() {
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
 
+  const [viewUser, setViewUser] = useState<User | null>(null);
+
   function openNew() { setForm(emptyForm()); setSaved(false); setShowModal(true); }
+  function openEdit(u: User) { setForm({ id: u.id, name: u.name, email: u.email, role: u.role, municipioId: u.municipioId ?? '', schoolId: u.schoolId ?? '' }); setSaved(false); setShowModal(true); }
   function closeModal() { setShowModal(false); setForm(null); setSaved(false); }
 
   function handleSave() {
@@ -58,12 +61,16 @@ export default function UsuariosPage() {
     if (!form.name.trim()) { alert('Nome é obrigatório.'); return; }
     if (!form.email.trim()) { alert('E-mail é obrigatório.'); return; }
     const munName = all.find(m => m.id === form.municipioId)?.name;
-    setUsers(prev => [...prev, {
-      ...form, id: 'u' + Date.now(),
-      municipioName: munName,
-      status: 'ativo',
-      lastAccess: new Date().toISOString(),
-    }]);
+    if (form.id) {
+      setUsers(prev => prev.map(u => u.id === form.id ? { ...u, ...form, municipioName: munName } : u));
+    } else {
+      setUsers(prev => [...prev, {
+        ...form, id: 'u' + Date.now(),
+        municipioName: munName,
+        status: 'ativo',
+        lastAccess: new Date().toISOString(),
+      }]);
+    }
     setSaved(true);
     setTimeout(closeModal, 1200);
   }
@@ -152,8 +159,8 @@ export default function UsuariosPage() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-center gap-2">
-                              <button className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={14} /></button>
-                              <button className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={14} /></button>
+                              <button onClick={() => openEdit(u)} title="Editar" className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors"><IconEdit size={14} /></button>
+                              <button onClick={() => setViewUser(u)} title="Visualizar" className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors"><IconEye size={14} /></button>
                               <button
                                 onClick={() => { if (confirm('Confirmar exclusão?')) setUsers(prev => prev.filter(x => x.id !== u.id)); }}
                                 title="Excluir"
@@ -234,6 +241,36 @@ export default function UsuariosPage() {
                 <IconSave size={15} />
                 {saved ? 'Convidado!' : 'Enviar convite'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View User Modal */}
+      {viewUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Detalhes do Usuário</h2>
+              <button onClick={() => setViewUser(null)} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={20} /></button>
+            </div>
+            <div className="p-6 space-y-3">
+              {[
+                { label: 'Nome', value: viewUser.name },
+                { label: 'E-mail', value: viewUser.email },
+                { label: 'Perfil', value: PERFIS.find(p => p.value === viewUser.role)?.label ?? viewUser.role },
+                { label: 'Município', value: viewUser.municipioName ?? '—' },
+                { label: 'Status', value: viewUser.status === 'ativo' ? 'Ativo' : 'Inativo' },
+                { label: 'Último acesso', value: viewUser.lastAccess ? new Date(viewUser.lastAccess).toLocaleDateString('pt-BR') : '—' },
+              ].map(row => (
+                <div key={row.label} className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">{row.label}</span>
+                  <span className="text-gray-900">{row.value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end p-6 border-t border-gray-100">
+              <button onClick={() => setViewUser(null)} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Fechar</button>
             </div>
           </div>
         </div>
