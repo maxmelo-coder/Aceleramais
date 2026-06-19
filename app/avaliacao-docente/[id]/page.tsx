@@ -327,8 +327,8 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
 
             <div className="relative px-6 py-7 flex items-center gap-5">
               {/* Logo branca em container */}
-              <div className="flex-shrink-0 bg-white/15 rounded-2xl p-3 backdrop-blur-sm border border-white/20">
-                <img src="/logo.png" alt="Acelera+" className="h-12 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              <div className="flex-shrink-0 bg-white rounded-2xl p-3 shadow-lg">
+                <img src="/logo.png" alt="Acelera+" className="h-12 w-auto object-contain" />
               </div>
               <div className="min-w-0">
                 <p className="text-white/70 text-[11px] font-semibold uppercase tracking-widest mb-1">Programa de Educação Empreendedora</p>
