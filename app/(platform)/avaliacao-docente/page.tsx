@@ -7,8 +7,10 @@ import { useMunicipio } from '@/lib/municipio-context';
 import { storageGet, storageSet } from '@/lib/storage';
 import type { TeacherEvaluationForm } from '@/lib/types';
 
-const tabLabels = ['Formulários', 'Respostas', 'Análise'] as const;
+const tabLabels = ['Formulários', 'Respostas', 'Análise', 'Avaliação do Formador'] as const;
 type Tab = typeof tabLabels[number];
+
+const FORM_ID_FORMADOR = 'avaliacao-formador-2025';
 
 // ─── Pie Chart ────────────────────────────────────────────────────────────────
 interface PieSegment { label: string; value: number; color: string; }
@@ -216,13 +218,24 @@ export default function AvaliacaoDocentePage() {
   const [tab, setTab] = useState<Tab>('Formulários');
   const [forms, setForms] = useState<TeacherEvaluationForm[]>(() => storageGet('acelera_forms_docente_meta', []));
   const [respostas, setRespostas] = useState<DocenteFormData[]>(() => storageGet('acelera_forms_docente', []));
+  const [respostasFormador, setRespostasFormador] = useState<any[]>(() => storageGet('acelera_forms_formador', []));
+  useEffect(() => { storageSet('acelera_forms_formador', respostasFormador); }, [respostasFormador]);
   const [linkCopiado, setLinkCopiado] = useState(false);
+  const [linkFormadorCopiado, setLinkFormadorCopiado] = useState(false);
 
   function copiarLink() {
     const url = `${window.location.origin}/avaliacao-docente/${FORM_ID_PUBLICO}`;
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopiado(true);
       setTimeout(() => setLinkCopiado(false), 2500);
+    });
+  }
+
+  function copiarLinkFormador() {
+    const url = `${window.location.origin}/avaliacao-formador/${FORM_ID_FORMADOR}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkFormadorCopiado(true);
+      setTimeout(() => setLinkFormadorCopiado(false), 2500);
     });
   }
 
@@ -679,6 +692,199 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Avaliação do Formador ──────────────────────────────────────────── */}
+      {tab === 'Avaliação do Formador' && (() => {
+        const total = respostasFormador.length;
+        const criterios = [
+          'Demonstrou domínio do conteúdo apresentado',
+          'Explicou os temas de forma clara e objetiva',
+          'Manteve uma comunicação adequada e acessível',
+          'Respondeu às dúvidas com clareza',
+          'Demonstrou preparo e organização',
+          'Utilizou exemplos práticos relevantes',
+          'Estimulou a participação dos participantes',
+          'Manteve o interesse e o engajamento durante o treinamento',
+          'Demonstrou respeito e cordialidade com os participantes',
+          'O tempo do treinamento foi bem administrado',
+        ];
+        const avgCriterio = (idx: number) => total === 0 ? 0 :
+          +(respostasFormador.reduce((a: number, r: any) => a + (r.criterios?.[idx] ?? 0), 0) / total).toFixed(1);
+        const geralCount: Record<string, number> = {};
+        respostasFormador.forEach((r: any) => { if (r.avaliacaoGeral) geralCount[r.avaliacaoGeral] = (geralCount[r.avaliacaoGeral]||0)+1; });
+        const recomendaCount: Record<string, number> = {};
+        respostasFormador.forEach((r: any) => { if (r.recomendaria) recomendaCount[r.recomendaria] = (recomendaCount[r.recomendaria]||0)+1; });
+        return (
+          <div className="space-y-6">
+            {/* Link Banner */}
+            <div className="bg-gradient-to-r from-[#F48B1B]/10 to-[#2E8C99]/10 border border-[#F48B1B]/20 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F48B1B" strokeWidth="2" className="flex-shrink-0">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <span className="font-semibold text-gray-900 text-sm">Link para avaliação do formador (participantes)</span>
+                <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Ativo</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-700 truncate">Avaliação de Treinamento — Programa Acelera+</p>
+                  <p className="text-xs text-[#F48B1B] font-mono truncate mt-0.5">
+                    {typeof window !== 'undefined' ? `${window.location.origin}/avaliacao-formador/${FORM_ID_FORMADOR}` : `/avaliacao-formador/${FORM_ID_FORMADOR}`}
+                  </p>
+                </div>
+                <a href={`/avaliacao-formador/${FORM_ID_FORMADOR}`} target="_blank" rel="noopener noreferrer"
+                  className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-medium transition-colors border border-gray-200">
+                  Abrir
+                </a>
+                <button onClick={copiarLinkFormador}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    linkFormadorCopiado ? 'bg-green-500 text-white' : 'bg-[#F48B1B] hover:bg-[#d4720e] text-white'
+                  }`}>
+                  {linkFormadorCopiado ? (
+                    <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>Copiado!</>
+                  ) : (
+                    <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar link</>
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-3">Compartilhe com os participantes após o treinamento. Não precisa de login.</p>
+            </div>
+
+            {/* KPIs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <StatCard title="Respostas" value={total} icon={<IconTeacher size={18} />} color="orange" />
+              <StatCard title="Média Geral" value={total === 0 ? '—' : (criterios.map((_,i) => avgCriterio(i)).reduce((a,b) => a+b, 0) / criterios.length).toFixed(1) + '/5'} icon={<IconTeacher size={18} />} color="blue" />
+              <StatCard title="Recomendam" value={total === 0 ? '—' : `${Math.round(((recomendaCount['Sim']||0)/total)*100)}%`} icon={<IconTeacher size={18} />} color="green" />
+              <StatCard title="Excelente/MB" value={total === 0 ? '—' : `${Math.round((((geralCount['Excelente']||0)+(geralCount['Muito Bom']||0))/total)*100)}%`} icon={<IconTeacher size={18} />} color="purple" />
+            </div>
+
+            {/* Critérios */}
+            {total > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h3 className="font-semibold text-gray-900 mb-4">Média por Critério (escala 1–5)</h3>
+                <div className="space-y-3">
+                  {criterios.map((c, i) => {
+                    const avg = avgCriterio(i);
+                    const pct = (avg / 5) * 100;
+                    const color = avg >= 4 ? '#059669' : avg >= 3 ? '#F48B1B' : '#E30613';
+                    return (
+                      <div key={i} className="space-y-1">
+                        <div className="flex justify-between text-xs text-gray-600">
+                          <span className="truncate max-w-[80%]">{c}</span>
+                          <span className="font-bold ml-2" style={{ color }}>{avg}</span>
+                        </div>
+                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Avaliação Geral + Recomendação */}
+            {total > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                  <h3 className="font-semibold text-gray-900 mb-3">Avaliação Geral</h3>
+                  {['Excelente','Muito Bom','Bom','Regular','Insatisfatório'].map(op => (
+                    <div key={op} className="flex items-center gap-2 mb-2">
+                      <div className="h-5 rounded" style={{ width: `${total > 0 ? Math.round(((geralCount[op]||0)/total)*80) : 0}px`, minWidth: 4, background: '#2E8C99' }} />
+                      <span className="text-xs text-gray-700">{op}</span>
+                      <span className="text-xs text-gray-400 ml-auto">{geralCount[op]||0} ({total>0?Math.round(((geralCount[op]||0)/total)*100):0}%)</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                  <h3 className="font-semibold text-gray-900 mb-3">Recomendaria o formador?</h3>
+                  {['Sim','Talvez','Não'].map((op, idx) => {
+                    const colors = ['#059669','#F48B1B','#E30613'];
+                    return (
+                      <div key={op} className="flex items-center gap-2 mb-2">
+                        <div className="h-5 rounded" style={{ width: `${total > 0 ? Math.round(((recomendaCount[op]||0)/total)*80) : 0}px`, minWidth: 4, background: colors[idx] }} />
+                        <span className="text-xs text-gray-700">{op}</span>
+                        <span className="text-xs text-gray-400 ml-auto">{recomendaCount[op]||0} ({total>0?Math.round(((recomendaCount[op]||0)/total)*100):0}%)</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tabela de respostas */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">Respostas ({total})</h3>
+                {total > 0 && (
+                  <button onClick={() => {
+                    const rows = [['Formador','Escola','Data','Nota Média','Geral','Recomenda','Melhor','Melhorar'].join(','),
+                      ...respostasFormador.map((r: any) => [
+                        r.nomeFormador||'', r.escola||'', r.dataFormacao||'',
+                        (criterios.map((_,i)=>r.criterios?.[i]??0).reduce((a:number,b:number)=>a+b,0)/criterios.length).toFixed(1),
+                        r.avaliacaoGeral||'', r.recomendaria||'',
+                        `"${(r.melhor||'').replace(/"/g,'""')}"`,
+                        `"${(r.melhorar||'').replace(/"/g,'""')}"`,
+                      ].join(','))];
+                    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                    a.download = 'avaliacao_formador.csv'; a.click();
+                  }} className="flex items-center gap-1.5 text-xs font-medium text-[#2E8C99] hover:text-[#226e78] border border-[#2E8C99]/30 px-3 py-1.5 rounded-lg transition-colors">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Exportar CSV
+                  </button>
+                )}
+              </div>
+              {total === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <IconTeacher size={40} className="text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium">Nenhuma resposta registrada</p>
+                  <p className="text-gray-400 text-sm mt-1">Compartilhe o link acima com os participantes do treinamento</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Formador</th>
+                        <th className="px-4 py-3 text-left">Escola</th>
+                        <th className="px-4 py-3 text-left">Data</th>
+                        <th className="px-4 py-3 text-center">Nota Média</th>
+                        <th className="px-4 py-3 text-center">Avaliação Geral</th>
+                        <th className="px-4 py-3 text-center">Recomenda</th>
+                        <th className="px-4 py-3 text-center">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {respostasFormador.map((r: any) => {
+                        const media = (criterios.map((_,i)=>r.criterios?.[i]??0).reduce((a:number,b:number)=>a+b,0)/criterios.length);
+                        const cor = media >= 4 ? 'green' : media >= 3 ? 'orange' : 'red';
+                        return (
+                          <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3 font-medium text-gray-900">{r.nomeFormador||'—'}</td>
+                            <td className="px-4 py-3 text-gray-600">{r.escola||'—'}</td>
+                            <td className="px-4 py-3 text-gray-500 text-xs">{r.dataFormacao||'—'}</td>
+                            <td className="px-4 py-3 text-center"><Badge label={media.toFixed(1)+'/5'} variant={cor as any} /></td>
+                            <td className="px-4 py-3 text-center text-xs text-gray-700">{r.avaliacaoGeral||'—'}</td>
+                            <td className="px-4 py-3 text-center"><Badge label={r.recomendaria||'—'} variant={r.recomendaria==='Sim'?'green':r.recomendaria==='Não'?'red':'orange'} /></td>
+                            <td className="px-4 py-3 text-center">
+                              <button onClick={() => { if(confirm('Excluir?')) setRespostasFormador(prev => prev.filter((x:any) => x.id !== r.id)); }}
+                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/></svg>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         );
