@@ -336,11 +336,6 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
                 <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
                   Questionário diagnóstico para acompanhar a implementação do programa nas escolas.
                 </p>
-                <div className="flex items-center gap-2 mt-3">
-                  <span className="bg-white/20 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full border border-white/20">10 blocos</span>
-                  <span className="bg-white/20 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full border border-white/20">~5 min</span>
-                  <span className="bg-[#F48B1B]/80 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">Anônimo</span>
-                </div>
               </div>
             </div>
           </div>
