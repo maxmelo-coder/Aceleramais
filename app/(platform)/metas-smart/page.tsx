@@ -163,6 +163,105 @@ export default function MetasSmartPage() {
     setForm({ ...form, [key]: value } as typeof form);
   }
 
+  function gerarMetasDocentes() {
+    const respostas = storageGet<any[]>('acelera_forms_docente', []);
+    if (respostas.length === 0) {
+      alert('Nenhum dado de avaliação docente disponível. Aguarde que os professores respondam.');
+      return;
+    }
+    const total = respostas.length;
+    const avgImpl = Math.round(respostas.reduce((a,r) => a+(r.indiceImplementacao||0),0)/total);
+    const avgApre = Math.round(respostas.reduce((a,r) => a+(r.indiceAprendizagem||0),0)/total);
+    const avgAuto = Math.round(respostas.reduce((a,r) => a+(r.indiceAutoeficacia||0),0)/total);
+    const promotores = respostas.filter(r => r.b9_nps >= 9).length;
+    const newMetas: SmartGoal[] = [];
+    const now = Date.now();
+    const deadline = new Date(new Date().getFullYear(), 11, 31).toISOString().split('T')[0];
+    if (avgImpl < 80) {
+      newMetas.push({
+        id: 'meta_impl_' + now,
+        title: 'Elevar Índice de Implementação do Módulo para 80%',
+        responsible: 'Coordenação Pedagógica',
+        especifica: 'Aumentar o índice de implementação do módulo empreendedor de ' + avgImpl + '% para pelo menos 80%, medido pelas avaliações docentes.',
+        mensuravel: 'Índice de implementação médio ≥ 80% nas respostas da avaliação docente.',
+        atingivel: 'Com formação continuada e suporte de materiais, é possível elevar em ' + (80 - avgImpl) + 'pp.',
+        relevante: 'A implementação efetiva do módulo é condição essencial para o desenvolvimento das competências empreendedoras.',
+        temporal: 'Até o final do ano letivo corrente.',
+        deadline,
+        initialValue: avgImpl,
+        targetValue: 80,
+        currentValue: avgImpl,
+        status: 'em_andamento',
+        origem: 'avaliacao_docente',
+        observations: `Gerada automaticamente com base em ${total} avaliação(ões) docente(s).`,
+      });
+    }
+    if (avgApre < 75) {
+      newMetas.push({
+        id: 'meta_apre_' + (now+1),
+        title: 'Alcançar 75% no Índice de Aprendizagem dos Estudantes',
+        responsible: 'Professores e Formadores',
+        especifica: 'Elevar o índice de aprendizagem dos estudantes de ' + avgApre + '% para 75%, segundo a percepção dos professores.',
+        mensuravel: 'Índice de aprendizagem médio ≥ 75% nas avaliações docentes.',
+        atingivel: 'Reforço de metodologias ativas e materiais complementares viabilizam o crescimento de ' + (75 - avgApre) + 'pp.',
+        relevante: 'A aprendizagem é o objetivo central do programa e indicador de impacto direto.',
+        temporal: 'Até o próximo trimestre.',
+        deadline: new Date(new Date().setMonth(new Date().getMonth()+3)).toISOString().split('T')[0],
+        initialValue: avgApre,
+        targetValue: 75,
+        currentValue: avgApre,
+        status: 'em_andamento',
+        origem: 'avaliacao_docente',
+        observations: `Índice atual: ${avgApre}%. Gerada automaticamente.`,
+      });
+    }
+    if (avgAuto < 80) {
+      newMetas.push({
+        id: 'meta_auto_' + (now+2),
+        title: 'Fortalecer Autoeficácia Docente para 80%',
+        responsible: 'Equipe de Formação',
+        especifica: 'Elevar o índice de autoeficácia dos professores de ' + avgAuto + '% para 80% por meio de formações e suporte pedagógico.',
+        mensuravel: 'Índice de autoeficácia médio ≥ 80% na próxima rodada de avaliações.',
+        atingivel: 'Formações focadas em prática pedagógica permitem atingir esse índice.',
+        relevante: 'Professores mais confiantes entregam aulas mais engajantes e eficazes.',
+        temporal: 'Até o final do semestre.',
+        deadline: new Date(new Date().setMonth(new Date().getMonth()+6)).toISOString().split('T')[0],
+        initialValue: avgAuto,
+        targetValue: 80,
+        currentValue: avgAuto,
+        status: 'em_andamento',
+        origem: 'avaliacao_docente',
+        observations: `Índice atual: ${avgAuto}%. Gerada automaticamente.`,
+      });
+    }
+    const npsAlvoPromotor = Math.round(total * 0.7);
+    if (promotores < npsAlvoPromotor) {
+      newMetas.push({
+        id: 'meta_nps_' + (now+3),
+        title: 'Alcançar 70% de Promotores no NPS Docente',
+        responsible: 'Gestão do Programa',
+        especifica: 'Aumentar a proporção de professores promotores (NPS ≥ 9) de ' + promotores + ' para 70% do total de respondentes.',
+        mensuravel: '≥ 70% dos professores com NPS ≥ 9 na próxima avaliação.',
+        atingivel: 'Ajustes nos materiais, formação e suporte podem elevar a satisfação docente.',
+        relevante: 'Professores promotores são os maiores aliados na disseminação e qualidade do programa.',
+        temporal: 'Até a próxima avaliação trimestral.',
+        deadline: new Date(new Date().setMonth(new Date().getMonth()+3)).toISOString().split('T')[0],
+        initialValue: promotores,
+        targetValue: npsAlvoPromotor,
+        currentValue: promotores,
+        status: 'em_andamento',
+        origem: 'avaliacao_docente',
+        observations: `Atual: ${promotores} promotores de ${total}. Gerada automaticamente.`,
+      });
+    }
+    if (newMetas.length === 0) {
+      alert('Todos os índices estão acima das metas! Nenhuma nova meta necessária no momento.');
+      return;
+    }
+    setMetas(prev => [...prev.filter(m => m.origem !== 'avaliacao_docente'), ...newMetas]);
+    alert(`${newMetas.length} meta(s) gerada(s) com base nas avaliações docentes!`);
+  }
+
   function getProgress(m: SmartGoal): number {
     if (m.targetValue === 0) return 0;
     return Math.min(Math.round((m.currentValue / m.targetValue) * 100), 100);
@@ -175,10 +274,17 @@ export default function MetasSmartPage() {
           <h1 className="text-2xl font-bold text-gray-900">Metas SMART</h1>
           <p className="text-sm text-gray-500 mt-0.5">Definição e acompanhamento de metas específicas e mensuráveis</p>
         </div>
-        <button onClick={openNew}
-          className="flex items-center gap-2 bg-[#F48B1B] hover:bg-[#D4720E] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          <IconPlus size={15} /> Nova meta
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={gerarMetasDocentes}
+            className="flex items-center gap-2 border border-[#2E8C99] text-[#2E8C99] hover:bg-[#2E8C99]/10 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Gerar Metas dos Docentes
+          </button>
+          <button onClick={openNew}
+            className="flex items-center gap-2 bg-[#F48B1B] hover:bg-[#D4720E] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <IconPlus size={15} /> Nova meta
+          </button>
+        </div>
       </div>
 
       {/* Summary */}

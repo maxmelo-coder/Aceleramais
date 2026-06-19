@@ -103,6 +103,82 @@ export default function PlanoAcaoPage() {
     setForm({ ...form, [key]: value } as typeof form);
   }
 
+  function gerarPlanosDocentes() {
+    const respostas = storageGet<any[]>('acelera_forms_docente', []);
+    if (respostas.length === 0) { alert('Nenhum dado de avaliação docente disponível.'); return; }
+    const total = respostas.length;
+    const avgImpl = Math.round(respostas.reduce((a,r) => a+(r.indiceImplementacao||0),0)/total);
+    const avgApre = Math.round(respostas.reduce((a,r) => a+(r.indiceAprendizagem||0),0)/total);
+    const difCount: Record<string, number> = {};
+    respostas.forEach(r => {
+      ([
+        [r.b7_faltaTempo, 'Falta de tempo'],
+        [r.b7_poucoInteresse, 'Pouco interesse dos estudantes'],
+        [r.b7_dificuldadeConteudo, 'Dificuldade de compreensão dos conteúdos'],
+        [r.b7_faltaRecursos, 'Falta de recursos tecnológicos'],
+        [r.b7_necessidadeFormacao, 'Necessidade de mais formação'],
+        [r.b7_ausenciaApoio, 'Ausência de apoio familiar'],
+        [r.b7_cargaHoraria, 'Carga horária insuficiente'],
+        [r.b7_outros, r.b7_outrosTexto || 'Outros'],
+      ] as [boolean, string][]).forEach(([flag, label]) => {
+        if (flag) difCount[label] = (difCount[label]||0)+1;
+      });
+    });
+    const topDif = Object.entries(difCount).sort((a,b)=>b[1]-a[1])[0];
+    const now = Date.now();
+    const newPlanos: ActionPlan[] = [];
+    const deadline3m = new Date(new Date().setMonth(new Date().getMonth()+3)).toISOString().split('T')[0];
+    const deadline1m = new Date(new Date().setMonth(new Date().getMonth()+1)).toISOString().split('T')[0];
+    if (avgImpl < 70) {
+      newPlanos.push({
+        id: 'pa_impl_' + now,
+        title: 'Plano de melhoria da implementação do módulo',
+        description: 'Ações para elevar o índice de implementação abaixo da meta de 70%.',
+        responsible: 'Coordenação Pedagógica',
+        deadline: deadline3m,
+        prioridade: avgImpl < 50 ? 'critica' : 'alta',
+        status: 'em_andamento',
+        problema: `Índice de implementação médio em ${avgImpl}% — abaixo da meta de 70%.`,
+        origem: 'avaliacao_docente',
+        observations: `Baseado em ${total} avaliação(ões) docente(s). Índice atual: ${avgImpl}%.`,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    if (avgApre < 65) {
+      newPlanos.push({
+        id: 'pa_apre_' + (now+1),
+        title: 'Reforço pedagógico para aprendizagem dos estudantes',
+        description: 'Intervenções para melhorar a absorção do conteúdo empreendedor pelos estudantes.',
+        responsible: 'Formadores e Professores',
+        deadline: deadline3m,
+        prioridade: 'alta',
+        status: 'pendente',
+        problema: `Índice de aprendizagem em ${avgApre}% — professores relatam dificuldade de absorção do conteúdo.`,
+        origem: 'avaliacao_docente',
+        observations: `Índice de aprendizagem atual: ${avgApre}%.`,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    if (topDif && topDif[1] >= Math.ceil(total * 0.3)) {
+      newPlanos.push({
+        id: 'pa_dif_' + (now+2),
+        title: `Resolver: "${topDif[0]}"`,
+        description: `Dificuldade mais relatada pelos professores (${topDif[1]} de ${total} respondentes).`,
+        responsible: 'Equipe Acelera+',
+        deadline: deadline1m,
+        prioridade: topDif[1] >= total * 0.5 ? 'critica' : 'media',
+        status: 'pendente',
+        problema: `${topDif[1]} professor(es) (${Math.round(topDif[1]/total*100)}%) relataram: "${topDif[0]}".`,
+        origem: 'avaliacao_docente',
+        observations: 'Dificuldade identificada nas avaliações docentes.',
+        createdAt: new Date().toISOString(),
+      });
+    }
+    if (newPlanos.length === 0) { alert('Todos os índices estão dentro da meta! Nenhum plano de ação necessário.'); return; }
+    setAcoes(prev => [...prev.filter(p => p.origem !== 'avaliacao_docente'), ...newPlanos]);
+    alert(`${newPlanos.length} plano(s) de ação gerado(s)!`);
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -110,10 +186,17 @@ export default function PlanoAcaoPage() {
           <h1 className="text-2xl font-bold text-gray-900">Plano de Ação</h1>
           <p className="text-sm text-gray-500 mt-0.5">Registro e acompanhamento das ações corretivas e preventivas</p>
         </div>
-        <button onClick={openNew}
-          className="flex items-center gap-2 bg-[#F48B1B] hover:bg-[#D4720E] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          <IconPlus size={15} /> Nova ação
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={gerarPlanosDocentes}
+            className="flex items-center gap-2 border border-[#2E8C99] text-[#2E8C99] hover:bg-[#2E8C99]/10 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Gerar Planos dos Docentes
+          </button>
+          <button onClick={openNew}
+            className="flex items-center gap-2 bg-[#F48B1B] hover:bg-[#D4720E] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <IconPlus size={15} /> Nova ação
+          </button>
+        </div>
       </div>
 
       {/* Summary */}

@@ -10,6 +10,41 @@ import type { TeacherEvaluationForm } from '@/lib/types';
 const tabLabels = ['Formulários', 'Respostas', 'Análise'] as const;
 type Tab = typeof tabLabels[number];
 
+// ─── Pie Chart ────────────────────────────────────────────────────────────────
+interface PieSegment { label: string; value: number; color: string; }
+
+function PieChart({ segments, size = 180 }: { segments: PieSegment[]; size?: number }) {
+  const total = segments.reduce((a, s) => a + s.value, 0);
+  if (total === 0) return <p className="text-xs text-gray-400 text-center py-4">Sem dados</p>;
+  const cx = size / 2, cy = size / 2, r = size * 0.4;
+  let angle = -Math.PI / 2;
+  const paths = segments.map(seg => {
+    const sweep = (seg.value / total) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+    angle += sweep;
+    const x2 = cx + r * Math.cos(angle), y2 = cy + r * Math.sin(angle);
+    const large = sweep > Math.PI ? 1 : 0;
+    return { ...seg, d: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z` };
+  });
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <svg width={size} height={size}>
+        {paths.map((p, i) => <path key={i} d={p.d} fill={p.color} stroke="white" strokeWidth="1.5" />)}
+      </svg>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center">
+        {segments.map(s => (
+          <div key={s.label} className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+            <span className="text-xs text-gray-600">{s.label}</span>
+            <span className="text-xs font-semibold text-gray-800">{s.value}</span>
+            <span className="text-xs text-gray-400">({total > 0 ? Math.round(s.value / total * 100) : 0}%)</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const TrashIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
@@ -190,6 +225,120 @@ export default function AvaliacaoDocentePage() {
       setTimeout(() => setLinkCopiado(false), 2500);
     });
   }
+
+  function exportPdf() {
+    const rs = respostas;
+    if (rs.length === 0) { alert('Nenhum dado para exportar.'); return; }
+    const total = rs.length;
+    const npsValid = rs.filter(r => r.b9_nps >= 0);
+    const avgNPS = npsValid.length > 0 ? (npsValid.reduce((a, r) => a + r.b9_nps, 0) / npsValid.length).toFixed(1) : '—';
+    const avgImpl = Math.round(rs.reduce((a,r) => a+(r.indiceImplementacao||0),0)/total);
+    const avgApre = Math.round(rs.reduce((a,r) => a+(r.indiceAprendizagem||0),0)/total);
+    const avgComp = Math.round(rs.reduce((a,r) => a+(r.indiceCompetencias||0),0)/total);
+    const avgAuto = Math.round(rs.reduce((a,r) => a+(r.indiceAutoeficacia||0),0)/total);
+    const promotores = rs.filter(r => r.b9_nps >= 9).length;
+    const neutros = rs.filter(r => r.b9_nps >= 7 && r.b9_nps <= 8).length;
+    const detratores = rs.filter(r => r.b9_nps >= 0 && r.b9_nps <= 6).length;
+    const difCount: Record<string, number> = {};
+    rs.forEach(r => {
+      const difs = [
+        r.b7_faltaTempo && 'Falta de tempo',
+        r.b7_poucoInteresse && 'Pouco interesse dos estudantes',
+        r.b7_dificuldadeConteudo && 'Dificuldade de compreensão',
+        r.b7_faltaRecursos && 'Falta de recursos',
+        r.b7_necessidadeFormacao && 'Necessidade de formação',
+        r.b7_ausenciaApoio && 'Ausência de apoio familiar',
+        r.b7_cargaHoraria && 'Carga horária insuficiente',
+        r.b7_outros && (r.b7_outrosTexto || 'Outros'),
+      ].filter(Boolean) as string[];
+      difs.forEach(d => { difCount[d] = (difCount[d]||0)+1; });
+    });
+    const topDif = Object.entries(difCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const byEscola: Record<string, number> = {};
+    rs.forEach(r => { const k = r.escola||'Não informado'; byEscola[k]=(byEscola[k]||0)+1; });
+    const byMod: Record<string, number> = {};
+    rs.forEach(r => { const k = r.moduloAtual||'Não informado'; byMod[k]=(byMod[k]||0)+1; });
+    const indices = [
+      { label: 'Implementação do Módulo', value: avgImpl, color: '#2E8C99' },
+      { label: 'Aprendizagem dos Estudantes', value: avgApre, color: '#16a34a' },
+      { label: 'Competências Empreendedoras', value: avgComp, color: '#F48B1B' },
+      { label: 'Autoeficácia Docente', value: avgAuto, color: '#9333ea' },
+    ];
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Relatório Avaliação Docente — Acelera+</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 32px; color: #111827; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 800; color: #2E8C99; margin: 0; }
+  .subtitle { color: #6b7280; font-size: 13px; margin-top: 2px; }
+  .meta { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+  .divider { border: none; border-top: 2px solid #e5e7eb; margin: 20px 0; }
+  h2 { font-size: 15px; font-weight: 700; color: #374151; margin: 20px 0 12px; }
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 8px; }
+  .kpi { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; background: #f9fafb; }
+  .kpi-val { font-size: 30px; font-weight: 800; color: #2E8C99; line-height: 1; }
+  .kpi-lbl { font-size: 11px; color: #6b7280; margin-top: 4px; font-weight: 500; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-label { font-size: 12px; color: #374151; width: 220px; flex-shrink: 0; font-weight: 500; }
+  .bar-bg { flex: 1; height: 22px; background: #f3f4f6; border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; }
+  .bar-val { font-size: 12px; font-weight: 700; color: #374151; width: 50px; text-align: right; }
+  .nps-row { display: flex; gap: 12px; }
+  .nps-card { flex: 1; padding: 14px; border-radius: 10px; text-align: center; }
+  .nps-card.pro { background: #dcfce7; border: 1px solid #86efac; }
+  .nps-card.neu { background: #fef9c3; border: 1px solid #fde047; }
+  .nps-card.det { background: #fee2e2; border: 1px solid #fca5a5; }
+  .nps-big { font-size: 32px; font-weight: 800; }
+  .nps-card.pro .nps-big { color: #16a34a; }
+  .nps-card.neu .nps-big { color: #ca8a04; }
+  .nps-card.det .nps-big { color: #dc2626; }
+  .nps-lbl { font-size: 11px; font-weight: 600; margin-top: 2px; color: #374151; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  th { background: #f3f4f6; padding: 10px 12px; text-align: left; font-weight: 600; color: #6b7280; font-size: 11px; }
+  td { padding: 10px 12px; border-top: 1px solid #f3f4f6; color: #374151; }
+  .footer { margin-top: 40px; font-size: 10px; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+  @media print { body { padding: 16px; } }
+</style></head><body>
+<h1>Relatório de Avaliação Docente</h1>
+<p class="subtitle">Programa Acelera+ — Questionário Diagnóstico de Professores</p>
+<p class="meta">Gerado em ${new Date().toLocaleString('pt-BR')} · Total de respostas: ${total}</p>
+<hr class="divider"/>
+<h2>Indicadores Gerais</h2>
+<div class="kpi-row">
+  <div class="kpi"><div class="kpi-val">${total}</div><div class="kpi-lbl">Total de Respostas</div></div>
+  <div class="kpi"><div class="kpi-val">${avgNPS}</div><div class="kpi-lbl">NPS Médio</div></div>
+  <div class="kpi"><div class="kpi-val">${avgImpl}%</div><div class="kpi-lbl">Implementação</div></div>
+  <div class="kpi"><div class="kpi-val">${avgAuto}%</div><div class="kpi-lbl">Autoeficácia</div></div>
+</div>
+<h2>Índices por Dimensão</h2>
+${indices.map(idx => `<div class="bar-row"><span class="bar-label">${idx.label}</span><div class="bar-bg"><div class="bar-fill" style="width:${idx.value}%;background:${idx.color};"></div></div><span class="bar-val">${idx.value}%</span></div>`).join('')}
+<h2>Distribuição NPS dos Professores</h2>
+<div class="nps-row">
+  <div class="nps-card pro"><div class="nps-big">${promotores}</div><div class="nps-lbl">Promotores (9–10)</div><div style="font-size:11px;color:#166534;margin-top:2px;">${total > 0 ? Math.round(promotores/total*100) : 0}%</div></div>
+  <div class="nps-card neu"><div class="nps-big">${neutros}</div><div class="nps-lbl">Neutros (7–8)</div><div style="font-size:11px;color:#854d0e;margin-top:2px;">${total > 0 ? Math.round(neutros/total*100) : 0}%</div></div>
+  <div class="nps-card det"><div class="nps-big">${detratores}</div><div class="nps-lbl">Detratores (0–6)</div><div style="font-size:11px;color:#991b1b;margin-top:2px;">${total > 0 ? Math.round(detratores/total*100) : 0}%</div></div>
+</div>
+${topDif.length > 0 ? `<h2>Dificuldades Mais Relatadas</h2>${topDif.map(([d,c]) => `<div class="bar-row"><span class="bar-label">${d}</span><div class="bar-bg"><div class="bar-fill" style="width:${Math.round(c/total*100)}%;background:#F48B1B;"></div></div><span class="bar-val">${c} (${Math.round(c/total*100)}%)</span></div>`).join('')}` : ''}
+<h2>Respostas por Escola</h2>
+<table><thead><tr><th>Escola</th><th>Respostas</th><th>% do Total</th></tr></thead><tbody>
+${Object.entries(byEscola).sort((a,b)=>b[1]-a[1]).map(([escola,cnt]) => `<tr><td>${escola}</td><td>${cnt}</td><td>${Math.round(cnt/total*100)}%</td></tr>`).join('')}
+</tbody></table>
+<h2>Respostas por Módulo</h2>
+<table><thead><tr><th>Módulo</th><th>Respostas</th><th>% do Total</th></tr></thead><tbody>
+${Object.entries(byMod).sort((a,b)=>b[1]-a[1]).map(([mod,cnt]) => `<tr><td>${mod}</td><td>${cnt}</td><td>${Math.round(cnt/total*100)}%</td></tr>`).join('')}
+</tbody></table>
+<h2>Lista de Respondentes</h2>
+<table><thead><tr><th>Professor</th><th>Escola</th><th>Município</th><th>Módulo</th><th>Impl.</th><th>Aprendiz.</th><th>NPS</th><th>Data</th></tr></thead><tbody>
+${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td><td>${r.municipio||'—'}</td><td>${(r.moduloAtual||'—').replace('Módulo ','Mod. ')}</td><td>${r.indiceImplementacao||0}%</td><td>${r.indiceAprendizagem||0}%</td><td>${r.b9_nps>=0?r.b9_nps:'—'}</td><td>${r.createdAt?new Date(r.createdAt).toLocaleDateString('pt-BR'):'—'}</td></tr>`).join('')}
+</tbody></table>
+<div class="footer">Programa Acelera+ — Relatório gerado automaticamente · ${new Date().getFullYear()}</div>
+</body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
+  }
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [docente, setDocente] = useState<DocenteFormData>(emptyDocente());
@@ -265,6 +414,41 @@ export default function AvaliacaoDocentePage() {
         </div>
       </div>
 
+      {/* Banner de link público — always visible */}
+      <div className="bg-gradient-to-r from-[#2E8C99]/10 to-[#F48B1B]/10 border border-[#2E8C99]/20 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E8C99" strokeWidth="2" className="flex-shrink-0">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          <span className="font-semibold text-gray-900 text-sm">Link para os professores responderem externamente</span>
+          <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Ativo</span>
+        </div>
+        <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-gray-700 truncate">Avaliação Docente — Programa Acelera+</p>
+            <p className="text-xs text-[#2E8C99] font-mono truncate mt-0.5">
+              {typeof window !== 'undefined' ? `${window.location.origin}/avaliacao-docente/${FORM_ID_PUBLICO}` : `/avaliacao-docente/${FORM_ID_PUBLICO}`}
+            </p>
+          </div>
+          <a href={`/avaliacao-docente/${FORM_ID_PUBLICO}`} target="_blank" rel="noopener noreferrer"
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-medium transition-colors border border-gray-200">
+            Abrir
+          </a>
+          <button onClick={copiarLink}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              linkCopiado ? 'bg-green-500 text-white' : 'bg-[#2E8C99] hover:bg-[#256e78] text-white'
+            }`}>
+            {linkCopiado ? (
+              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>Copiado!</>
+            ) : (
+              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar link</>
+            )}
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mt-3">Envie este link pelo WhatsApp, e-mail ou grupo de professores. Não precisa de login.</p>
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
         {tabLabels.map(t => (
@@ -277,41 +461,6 @@ export default function AvaliacaoDocentePage() {
 
       {tab === 'Formulários' && (
         <>
-          {/* Banner de link público para professores */}
-          <div className="bg-gradient-to-r from-[#2E8C99]/10 to-[#F48B1B]/10 border border-[#2E8C99]/20 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E8C99" strokeWidth="2" className="flex-shrink-0">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-              </svg>
-              <span className="font-semibold text-gray-900 text-sm">Link para os professores responderem externamente</span>
-              <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Ativo</span>
-            </div>
-            <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-700 truncate">Avaliação Docente — Programa Acelera+</p>
-                <p className="text-xs text-[#2E8C99] font-mono truncate mt-0.5">
-                  {typeof window !== 'undefined' ? `${window.location.origin}/avaliacao-docente/${FORM_ID_PUBLICO}` : `/avaliacao-docente/${FORM_ID_PUBLICO}`}
-                </p>
-              </div>
-              <a href={`/avaliacao-docente/${FORM_ID_PUBLICO}`} target="_blank" rel="noopener noreferrer"
-                className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-medium transition-colors border border-gray-200">
-                Abrir
-              </a>
-              <button onClick={copiarLink}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  linkCopiado ? 'bg-green-500 text-white' : 'bg-[#2E8C99] hover:bg-[#256e78] text-white'
-                }`}>
-                {linkCopiado ? (
-                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>Copiado!</>
-                ) : (
-                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar link</>
-                )}
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 mt-3">📱 Envie este link pelo WhatsApp, e-mail ou grupo de professores. Não precisa de login.</p>
-          </div>
-
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <StatCard title="Respostas" value={respostas.length} icon={<IconTeacher size={18} />} color="blue" />
             <StatCard title="Impl. Média" value={respostas.length > 0 ? Math.round(respostas.reduce((a,r) => a+r.indiceImplementacao,0)/respostas.length)+'%' : '—'} icon={<IconTeacher size={18} />} color="orange" />
@@ -380,21 +529,160 @@ export default function AvaliacaoDocentePage() {
         </div>
       )}
 
-      {tab === 'Análise' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <StatCard title="Impl. do Módulo" value={respostas.length > 0 ? Math.round(respostas.reduce((a,r)=>a+r.indiceImplementacao,0)/respostas.length)+'%' : '—'} icon={<IconTeacher size={18} />} color="blue" />
-            <StatCard title="Aprendizagem" value={respostas.length > 0 ? Math.round(respostas.reduce((a,r)=>a+r.indiceAprendizagem,0)/respostas.length)+'%' : '—'} icon={<IconTeacher size={18} />} color="green" />
-            <StatCard title="Competências" value={respostas.length > 0 ? Math.round(respostas.reduce((a,r)=>a+r.indiceCompetencias,0)/respostas.length)+'%' : '—'} icon={<IconTeacher size={18} />} color="orange" />
-            <StatCard title="Autoeficácia" value={respostas.length > 0 ? Math.round(respostas.reduce((a,r)=>a+r.indiceAutoeficacia,0)/respostas.length)+'%' : '—'} icon={<IconTeacher size={18} />} color="purple" />
+      {tab === 'Análise' && (() => {
+        const total = respostas.length;
+        if (total === 0) return (
+          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100">
+            <IconTeacher size={40} className="text-gray-300 mb-3" />
+            <p className="text-gray-500">Os gráficos de análise serão exibidos quando houver dados.</p>
           </div>
-          {respostas.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-gray-100">
-              <p className="text-gray-400 text-sm">Os gráficos de análise serão exibidos quando houver dados.</p>
+        );
+        const npsValid = respostas.filter(r => r.b9_nps >= 0);
+        const avgNPS = npsValid.length > 0 ? (npsValid.reduce((a,r) => a+r.b9_nps, 0)/npsValid.length).toFixed(1) : '—';
+        const avgImpl = Math.round(respostas.reduce((a,r)=>a+r.indiceImplementacao,0)/total);
+        const avgApre = Math.round(respostas.reduce((a,r)=>a+r.indiceAprendizagem,0)/total);
+        const avgComp = Math.round(respostas.reduce((a,r)=>a+r.indiceCompetencias,0)/total);
+        const avgAuto = Math.round(respostas.reduce((a,r)=>a+r.indiceAutoeficacia,0)/total);
+        const avgEng  = Math.round(respostas.reduce((a,r)=>a+r.indiceEngajamento,0)/total);
+        const promotores = respostas.filter(r => r.b9_nps >= 9).length;
+        const neutros    = respostas.filter(r => r.b9_nps >= 7 && r.b9_nps <= 8).length;
+        const detratores = respostas.filter(r => r.b9_nps >= 0 && r.b9_nps <= 6).length;
+        // dificuldades
+        const difCount: Record<string, number> = {};
+        respostas.forEach(r => {
+          ([
+            [r.b7_faltaTempo, 'Falta de tempo'],
+            [r.b7_poucoInteresse, 'Pouco interesse'],
+            [r.b7_dificuldadeConteudo, 'Dificuldade de compreensão'],
+            [r.b7_faltaRecursos, 'Falta de recursos'],
+            [r.b7_necessidadeFormacao, 'Necessidade de formação'],
+            [r.b7_ausenciaApoio, 'Ausência de apoio'],
+            [r.b7_cargaHoraria, 'Carga horária insuficiente'],
+            [r.b7_outros, r.b7_outrosTexto || 'Outros'],
+          ] as [boolean, string][]).forEach(([flag, label]) => {
+            if (flag) difCount[label] = (difCount[label]||0)+1;
+          });
+        });
+        const topDif = Object.entries(difCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
+        // por módulo
+        const modCount: Record<string, number> = {};
+        respostas.forEach(r => { const k = r.moduloAtual||'Não informado'; modCount[k]=(modCount[k]||0)+1; });
+        const modColors = ['#2E8C99','#F48B1B','#16a34a','#9333ea','#3b82f6','#ef4444'];
+        const modSegments = Object.entries(modCount).map(([label,value],i) => ({ label, value, color: modColors[i % modColors.length] }));
+        // por escola
+        const escolaCount: Record<string, number> = {};
+        respostas.forEach(r => { const k = r.escola||'Não informado'; escolaCount[k]=(escolaCount[k]||0)+1; });
+        const maxEscola = Math.max(...Object.values(escolaCount), 1);
+        // bar indices
+        const indices = [
+          { label: 'Implementação do Módulo', value: avgImpl, color: '#2E8C99' },
+          { label: 'Aprendizagem dos Estudantes', value: avgApre, color: '#16a34a' },
+          { label: 'Competências Empreendedoras', value: avgComp, color: '#F48B1B' },
+          { label: 'Autoeficácia Docente', value: avgAuto, color: '#9333ea' },
+          { label: 'Engajamento dos Alunos', value: avgEng, color: '#3b82f6' },
+        ];
+        const maxDif = topDif.length > 0 ? topDif[0][1] : 1;
+
+        return (
+          <div className="space-y-6">
+            {/* Header with export */}
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900 text-lg">Análise das Avaliações Docentes</h2>
+              <button onClick={exportPdf}
+                className="flex items-center gap-2 bg-[#2E8C99] hover:bg-[#256e78] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar PDF
+              </button>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* KPI row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <StatCard title="Total de Respostas" value={total} icon={<IconTeacher size={18} />} color="blue" />
+              <StatCard title="NPS Médio" value={avgNPS} icon={<IconTeacher size={18} />} color="purple" />
+              <StatCard title="Índice Implementação" value={`${avgImpl}%`} icon={<IconTeacher size={18} />} color="orange" />
+              <StatCard title="Índice Autoeficácia" value={`${avgAuto}%`} icon={<IconTeacher size={18} />} color="green" />
+            </div>
+
+            {/* Índices bar chart + NPS pie */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h3 className="font-semibold text-gray-900 mb-4">Índices por Dimensão</h3>
+                <div className="space-y-3">
+                  {indices.map(idx => (
+                    <div key={idx.label} className="space-y-1">
+                      <div className="flex justify-between text-xs text-gray-600">
+                        <span>{idx.label}</span>
+                        <span className="font-bold" style={{ color: idx.color }}>{idx.value}%</span>
+                      </div>
+                      <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${idx.value}%`, backgroundColor: idx.color }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h3 className="font-semibold text-gray-900 mb-4">Distribuição NPS dos Professores</h3>
+                <PieChart segments={[
+                  { label: 'Promotores (9–10)', value: promotores, color: '#16a34a' },
+                  { label: 'Neutros (7–8)', value: neutros, color: '#eab308' },
+                  { label: 'Detratores (0–6)', value: detratores, color: '#ef4444' },
+                ]} size={160} />
+              </div>
+            </div>
+
+            {/* Módulos pie + Dificuldades bars */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h3 className="font-semibold text-gray-900 mb-4">Módulos Trabalhados</h3>
+                {modSegments.length > 0
+                  ? <PieChart segments={modSegments} size={160} />
+                  : <p className="text-xs text-gray-400 text-center py-4">Sem dados</p>}
+              </div>
+
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h3 className="font-semibold text-gray-900 mb-4">Dificuldades Mais Relatadas</h3>
+                {topDif.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4">Nenhuma dificuldade relatada</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {topDif.map(([label, count]) => (
+                      <div key={label} className="space-y-1">
+                        <div className="flex justify-between text-xs text-gray-600">
+                          <span className="truncate max-w-[70%]">{label}</span>
+                          <span className="font-semibold text-[#F48B1B]">{count} ({Math.round(count/total*100)}%)</span>
+                        </div>
+                        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-[#F48B1B]" style={{ width: `${(count/maxDif)*100}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Respostas por escola */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <h3 className="font-semibold text-gray-900 mb-4">Distribuição por Escola</h3>
+              <div className="space-y-2.5">
+                {Object.entries(escolaCount).sort((a,b)=>b[1]-a[1]).map(([escola, count]) => (
+                  <div key={escola} className="space-y-1">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span className="truncate max-w-[60%]">{escola}</span>
+                      <span className="font-semibold text-[#2E8C99]">{count} ({Math.round(count/total*100)}%)</span>
+                    </div>
+                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-[#2E8C99]" style={{ width: `${(count/maxEscola)*100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Wizard Modal ───────────────────────────────────────────────────── */}
       {showWizard && (

@@ -6,7 +6,7 @@ import { IconReports, IconDownload, IconEye } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
 import { storageGet } from '@/lib/storage';
 
-type ReportView = 'por_estudante' | 'por_turma' | 'por_escola' | 'rede_municipal' | 'ranking_municipio';
+type ReportView = 'por_estudante' | 'por_turma' | 'por_escola' | 'rede_municipal' | 'ranking_municipio' | 'avaliacao_docente';
 
 const REPORT_TABS: { key: ReportView; label: string }[] = [
   { key: 'por_estudante',    label: 'Por Estudante' },
@@ -14,6 +14,7 @@ const REPORT_TABS: { key: ReportView; label: string }[] = [
   { key: 'por_escola',       label: 'Por Escola' },
   { key: 'rede_municipal',   label: 'Rede Municipal' },
   { key: 'ranking_municipio', label: 'Ranking por Município' },
+  { key: 'avaliacao_docente', label: 'Avaliação Docente' },
 ];
 
 type Tab = 'Relatórios' | 'Gráficos';
@@ -230,6 +231,52 @@ export default function RelatoriosPage() {
     );
   }
 
+  // ─── Avaliação Docente ────────────────────────────────────────
+  function renderAvaliacaoDocente() {
+    if (docentes.length === 0) return <EmptyState message="Nenhuma avaliação docente encontrada" />;
+    const headers = ['Professor', 'Escola', 'Município', 'Módulo', 'Impl.%', 'Aprendiz.%', 'Competências%', 'Autoeficácia%', 'NPS', 'Data'];
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">Avaliações dos Professores</h3>
+          <button onClick={() => downloadCSV('avaliacao_docente.csv', [headers, ...docentes.map((r: any) => [
+            r.nomeProfessor||'', r.escola||'', r.municipio||'', r.moduloAtual||'',
+            String(r.indiceImplementacao||0), String(r.indiceAprendizagem||0),
+            String(r.indiceCompetencias||0), String(r.indiceAutoeficacia||0),
+            r.b9_nps >= 0 ? String(r.b9_nps) : '',
+            r.createdAt ? new Date(r.createdAt).toLocaleDateString('pt-BR') : '',
+          ])])}
+            className="flex items-center gap-1.5 text-xs border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium">
+            <IconDownload size={13} /> Exportar CSV
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+              {headers.map(h => <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>)}
+            </tr></thead>
+            <tbody className="divide-y divide-gray-50">
+              {docentes.map((r: any) => (
+                <tr key={r.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{r.nomeProfessor||'—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{r.escola||'—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{r.municipio||'—'}</td>
+                  <td className="px-4 py-3 text-gray-600 max-w-[140px] truncate">{r.moduloAtual||'—'}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-blue-600">{r.indiceImplementacao||0}%</td>
+                  <td className="px-4 py-3 text-center font-semibold text-green-600">{r.indiceAprendizagem||0}%</td>
+                  <td className="px-4 py-3 text-center font-semibold text-orange-500">{r.indiceCompetencias||0}%</td>
+                  <td className="px-4 py-3 text-center font-semibold text-purple-600">{r.indiceAutoeficacia||0}%</td>
+                  <td className="px-4 py-3 text-center font-semibold">{r.b9_nps >= 0 ? r.b9_nps : '—'}</td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">{r.createdAt ? new Date(r.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   // ─── Ranking por Município ────────────────────────────────────
   function renderRankingMunicipio() {
     if (docentes.length === 0) return <EmptyState message="Nenhum dado de município disponível" />;
@@ -319,6 +366,7 @@ export default function RelatoriosPage() {
           {reportView === 'por_escola'        && renderPorEscola()}
           {reportView === 'rede_municipal'    && renderRedeMunicipal()}
           {reportView === 'ranking_municipio' && renderRankingMunicipio()}
+          {reportView === 'avaliacao_docente' && renderAvaliacaoDocente()}
         </div>
       )}
 
