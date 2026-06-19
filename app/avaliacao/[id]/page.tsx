@@ -206,37 +206,55 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] flex flex-col">
-      {/* Header */}
+      {/* ── Header com logo ───────────────────────────────────────────── */}
       <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#F48B1B] flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14v8"/></svg>
+        {/* Accent line */}
+        <div className="h-1" style={{ background: 'linear-gradient(90deg, #F48B1B 0%, #2E8C99 50%, #F48B1B 100%)' }} />
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-4">
+          <img src="/logo.png" alt="Acelera+" className="h-9 w-auto object-contain flex-shrink-0" />
+          <div className="w-px h-8 bg-gray-200 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-gray-900 leading-none tracking-wide uppercase">Questionário do Estudante</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              {assessmentMeta ? assessmentMeta.titulo : 'Avaliação Diagnóstica'}
+            </p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Questionário do Estudante</p>
-            <p className="text-sm font-bold text-gray-900">Acelera+ Escola de Empreendedorismo</p>
-          </div>
+          {!submitted && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg flex-shrink-0 text-white"
+              style={{ background: 'linear-gradient(90deg, #F48B1B, #2E8C99)' }}>
+              {step + 1}/{totalEtapas}
+            </span>
+          )}
         </div>
+        {/* Progress degradê */}
+        {!submitted && (
+          <div className="h-1 bg-gray-100 overflow-hidden">
+            <div className="h-full transition-all duration-500 rounded-r-full"
+              style={{ width: `${((step+1)/totalEtapas)*100}%`, background: 'linear-gradient(90deg, #F48B1B, #2E8C99)' }} />
+          </div>
+        )}
       </header>
 
-      {/* Progress */}
+      {/* Step labels */}
       {!submitted && (
-        <div className="bg-white border-b border-gray-100">
-          <div className="max-w-2xl mx-auto px-4 py-3">
-            <div className="flex items-center gap-2 mb-2">
-              {stepLabels.map((label, i) => (
-                <React.Fragment key={i}>
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${step >= i ? 'bg-[#F48B1B] text-white' : 'bg-gray-200 text-gray-500'}`}>{i+1}</div>
-                    <span className={`text-xs font-medium hidden sm:block ${step >= i ? 'text-gray-800' : 'text-gray-400'}`}>{label}</span>
+        <div className="bg-white border-b border-gray-50">
+          <div className="max-w-2xl mx-auto px-4 py-2.5 flex items-center gap-2">
+            {stepLabels.map((label, i) => (
+              <React.Fragment key={i}>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 transition-all ${
+                    i < step ? 'bg-green-500 text-white' : step === i ? 'text-white' : 'bg-gray-200 text-gray-400'
+                  }`}
+                  style={step === i ? { background: 'linear-gradient(135deg, #F48B1B, #2E8C99)' } : {}}>
+                    {i < step ? '✓' : i + 1}
                   </div>
-                  {i < stepLabels.length - 1 && <div className={`flex-1 h-0.5 transition-colors ${step > i ? 'bg-[#F48B1B]' : 'bg-gray-200'}`} />}
-                </React.Fragment>
-              ))}
-            </div>
-            <div className="w-full h-1.5 bg-gray-100 rounded-full">
-              <div className="h-full bg-[#F48B1B] rounded-full transition-all" style={{ width: `${((step+1)/totalEtapas)*100}%` }} />
-            </div>
+                  <span className={`text-[11px] font-medium hidden sm:block ${step >= i ? 'text-gray-700' : 'text-gray-400'}`}>{label}</span>
+                </div>
+                {i < stepLabels.length - 1 && (
+                  <div className={`flex-1 h-0.5 rounded-full transition-all ${step > i ? 'bg-[#F48B1B]' : 'bg-gray-200'}`} />
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </div>
       )}
@@ -246,6 +264,32 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
 
           {/* ── Etapa 1 – Identificação ──────────────────────────────────── */}
           {!submitted && step === 0 && (
+            <>
+            {/* Hero banner */}
+            <div className="relative rounded-3xl overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #F48B1B 0%, #d4720e 40%, #a85500 100%)' }}>
+              <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-10 bg-white" />
+              <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full opacity-10 bg-white" />
+              <div className="relative px-6 py-6 flex items-center gap-5">
+                <div className="flex-shrink-0 bg-white/15 rounded-2xl p-3 border border-white/20">
+                  <img src="/logo.png" alt="Acelera+" className="h-10 w-auto object-contain"
+                    style={{ filter: 'brightness(0) invert(1)' }} />
+                </div>
+                <div>
+                  <p className="text-white/70 text-[11px] font-semibold uppercase tracking-widest mb-1">Programa de Educação Empreendedora</p>
+                  <h2 className="text-white text-lg font-extrabold leading-tight">Avaliação Diagnóstica</h2>
+                  {assessmentMeta && (
+                    <p className="text-white/80 text-xs mt-1">{assessmentMeta.titulo}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2.5">
+                    {bancoQuestoes && <span className="bg-white/20 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/20">{bancoQuestoes.questoes.length} questões</span>}
+                    <span className="bg-white/20 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/20">~10 min</span>
+                    <span className="bg-[#2E8C99]/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">Gratuito</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h1 className="text-xl font-bold text-gray-900 mb-1">Seus dados</h1>
               <p className="text-sm text-gray-500 mb-6">Preencha para começar.</p>
@@ -290,10 +334,12 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
                   </div>
                 </div>
               </div>
-              <button onClick={next} className="mt-8 w-full bg-[#F48B1B] hover:bg-[#D4720E] text-white py-3 rounded-xl font-semibold text-sm transition-colors">
+              <button onClick={next} className="mt-8 w-full text-white py-3 rounded-xl font-semibold text-sm transition-colors"
+                style={{ background: 'linear-gradient(90deg, #F48B1B, #2E8C99)' }}>
                 Continuar →
               </button>
             </div>
+            </>
           )}
 
           {/* ── Etapa 2 – Questões Diagnósticas (only when bancoQuestoes exists) ── */}

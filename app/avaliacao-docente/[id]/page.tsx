@@ -195,32 +195,72 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
   if (submitted) {
     const indices = calcIndices(data);
     return (
-      <div className="min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center p-6">
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 max-w-md w-full p-8 text-center space-y-5">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
-              <polyline points="20,6 9,17 4,12"/>
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Avaliação enviada!</h2>
-            <p className="text-sm text-gray-500 mt-1">Obrigado, <span className="font-semibold text-gray-700">{data.nomeProfessor}</span>. Suas respostas foram registradas.</p>
-          </div>
-          {/* Índices calculados */}
-          <div className="grid grid-cols-2 gap-3 text-left">
-            {[
-              { label: 'Implementação do Módulo', value: indices.indiceImplementacao, color: 'text-[#2E8C99]' },
-              { label: 'Aprendizagem',             value: indices.indiceAprendizagem,  color: 'text-green-600' },
-              { label: 'Competências',             value: indices.indiceCompetencias,  color: 'text-[#F48B1B]' },
-              { label: 'Autoeficácia Docente',     value: indices.indiceAutoeficacia,  color: 'text-purple-600' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-500 leading-tight">{label}</p>
-                <p className={`text-2xl font-bold ${color} mt-1`}>{value}%</p>
+      <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #EBF6F7 0%, #FEF3E2 50%, #EBF6F7 100%)' }}>
+        {/* Success header */}
+        <div className="flex justify-center pt-10 pb-6">
+          <img src="/logo.png" alt="Acelera+" className="h-14 w-auto object-contain drop-shadow-sm" />
+        </div>
+
+        <div className="flex-1 flex items-start justify-center px-4 pb-12">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 max-w-lg w-full overflow-hidden">
+            {/* Top gradient band */}
+            <div className="h-2 w-full" style={{ background: 'linear-gradient(90deg, #2E8C99, #F48B1B)' }} />
+
+            <div className="p-8 text-center space-y-6">
+              {/* Success icon */}
+              <div className="relative inline-flex">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
+                  style={{ background: 'linear-gradient(135deg, #2E8C99 0%, #16a34a 100%)' }}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <polyline points="20,6 9,17 4,12"/>
+                  </svg>
+                </div>
+                <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#F48B1B] flex items-center justify-center shadow-md">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                </div>
               </div>
-            ))}
+
+              <div>
+                <h2 className="text-2xl font-extrabold text-gray-900 leading-tight">Avaliação enviada!</h2>
+                <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+                  Obrigado, <span className="font-bold text-[#2E8C99]">{data.nomeProfessor}</span>.<br/>
+                  Suas respostas foram registradas com sucesso.
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Seus índices</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+
+              {/* Índices */}
+              <div className="grid grid-cols-2 gap-3 text-left">
+                {[
+                  { label: 'Implementação', value: indices.indiceImplementacao, color: '#2E8C99', bg: '#EBF6F7' },
+                  { label: 'Aprendizagem',  value: indices.indiceAprendizagem,  color: '#16a34a', bg: '#f0fdf4' },
+                  { label: 'Competências',  value: indices.indiceCompetencias,  color: '#F48B1B', bg: '#FEF3E2' },
+                  { label: 'Autoeficácia',  value: indices.indiceAutoeficacia,  color: '#9333ea', bg: '#faf5ff' },
+                ].map(({ label, value, color, bg }) => (
+                  <div key={label} className="rounded-2xl p-4 text-center" style={{ backgroundColor: bg }}>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">{label}</p>
+                    <p className="text-3xl font-black leading-none" style={{ color }}>{value}<span className="text-base font-bold">%</span></p>
+                    {/* Mini progress bar */}
+                    <div className="mt-2 h-1.5 rounded-full bg-white/70 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${value}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-gray-400 bg-gray-50 rounded-xl px-4 py-2.5 leading-relaxed">
+                📊 Seus dados já estão disponíveis para a equipe Acelera+ em tempo real.
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-gray-400">Os dados foram computados e já estão disponíveis para a equipe Acelera+.</p>
         </div>
       </div>
     );
@@ -230,26 +270,30 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] flex flex-col">
-      {/* Header */}
+      {/* ── Hero header com logo ───────────────────────────────────────── */}
       <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#2E8C99] flex items-center justify-center flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
+        {/* Top accent line */}
+        <div className="h-1" style={{ background: 'linear-gradient(90deg, #2E8C99 0%, #F48B1B 50%, #2E8C99 100%)' }} />
+
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-4">
+          {/* Logo */}
+          <img src="/logo.png" alt="Acelera+" className="h-9 w-auto object-contain flex-shrink-0" />
+
+          {/* Divider */}
+          <div className="w-px h-8 bg-gray-200 flex-shrink-0" />
+
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-gray-900 leading-none">Avaliação Docente</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Programa Acelera+ · {STEPS[step]}</p>
+            <p className="text-xs font-bold text-gray-900 leading-none tracking-wide uppercase">Avaliação Docente</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{STEPS[step]}</p>
           </div>
           <span className="text-xs font-semibold text-[#2E8C99] bg-[#EBF6F7] px-2 py-1 rounded-lg flex-shrink-0">
             {step + 1}/{STEPS.length}
           </span>
         </div>
-        {/* Progress bar */}
-        <div className="h-1 bg-gray-100">
-          <div className="h-full bg-[#2E8C99] transition-all duration-500" style={{ width: `${progress}%` }} />
+        {/* Progress bar degradê */}
+        <div className="h-1 bg-gray-100 overflow-hidden">
+          <div className="h-full transition-all duration-500 rounded-r-full"
+            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #2E8C99, #F48B1B)' }} />
         </div>
       </header>
 
@@ -257,9 +301,12 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
       <div className="max-w-2xl mx-auto w-full px-4 pt-4 overflow-x-auto">
         <div className="flex gap-1.5 min-w-max pb-1">
           {STEPS.map((s, i) => (
-            <div key={s} className={`px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap transition-colors ${
-              i === step ? 'bg-[#2E8C99] text-white' : i < step ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
-            }`}>{i + 1}. {s}</div>
+            <div key={s} className={`px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap transition-all ${
+              i === step ? 'text-white shadow-sm' : i < step ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+            }`}
+            style={i === step ? { background: 'linear-gradient(90deg, #2E8C99, #F48B1B)' } : {}}>
+              {i < step ? '✓' : i + 1}. {s}
+            </div>
           ))}
         </div>
       </div>
@@ -269,6 +316,35 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
 
         {/* ─ STEP 0: Identificação ─────────────────────────────────────── */}
         {step === 0 && (
+          <>
+          {/* Hero banner só no step 0 */}
+          <div className="relative rounded-3xl overflow-hidden mb-2"
+            style={{ background: 'linear-gradient(135deg, #2E8C99 0%, #1d6b75 40%, #0f4a52 100%)' }}>
+            {/* Decorative circles */}
+            <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-10" style={{ background: '#F48B1B' }} />
+            <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full opacity-10" style={{ background: '#F48B1B' }} />
+            <div className="absolute top-4 right-16 w-10 h-10 rounded-full opacity-15" style={{ background: 'white' }} />
+
+            <div className="relative px-6 py-7 flex items-center gap-5">
+              {/* Logo branca em container */}
+              <div className="flex-shrink-0 bg-white/15 rounded-2xl p-3 backdrop-blur-sm border border-white/20">
+                <img src="/logo.png" alt="Acelera+" className="h-12 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-white/70 text-[11px] font-semibold uppercase tracking-widest mb-1">Programa de Educação Empreendedora</p>
+                <h2 className="text-white text-xl font-extrabold leading-tight">Avaliação Docente</h2>
+                <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
+                  Questionário diagnóstico para acompanhar a implementação do programa nas escolas.
+                </p>
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="bg-white/20 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full border border-white/20">10 blocos</span>
+                  <span className="bg-white/20 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full border border-white/20">~5 min</span>
+                  <span className="bg-[#F48B1B]/80 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">Anônimo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <BlockCard step={1} title="Identificação do Professor" subtitle="Informe seus dados antes de iniciar">
             <div className="space-y-4">
               <div>
@@ -315,6 +391,7 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
                 value={data.concluiuModulo} onChange={v => setF('concluiuModulo', v)} />
             </div>
           </BlockCard>
+          </>
         )}
 
         {/* ─ STEP 1: Implementação ─────────────────────────────────────── */}
