@@ -173,11 +173,23 @@ function RadioGroup({ label, field, options, data, onChange }: { label: string; 
 // ─── Wizard steps UI ─────────────────────────────────────────────────────────
 const WIZARD_STEPS = ['Identificação', 'Módulo', 'Aprendizagem', 'Competências', 'Autoavaliação', 'Monitoramento', 'Dificuldades', 'Impacto', 'NPS', 'Questões Abertas'];
 
+// ID fixo da avaliação docente pública
+const FORM_ID_PUBLICO = 'avaliacao-docente-2025';
+
 export default function AvaliacaoDocentePage() {
   const { selected, all } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Formulários');
   const [forms, setForms] = useState<TeacherEvaluationForm[]>(() => storageGet('acelera_forms_docente_meta', []));
   const [respostas, setRespostas] = useState<DocenteFormData[]>(() => storageGet('acelera_forms_docente', []));
+  const [linkCopiado, setLinkCopiado] = useState(false);
+
+  function copiarLink() {
+    const url = `${window.location.origin}/avaliacao-docente/${FORM_ID_PUBLICO}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopiado(true);
+      setTimeout(() => setLinkCopiado(false), 2500);
+    });
+  }
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [docente, setDocente] = useState<DocenteFormData>(emptyDocente());
@@ -265,6 +277,41 @@ export default function AvaliacaoDocentePage() {
 
       {tab === 'Formulários' && (
         <>
+          {/* Banner de link público para professores */}
+          <div className="bg-gradient-to-r from-[#2E8C99]/10 to-[#F48B1B]/10 border border-[#2E8C99]/20 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E8C99" strokeWidth="2" className="flex-shrink-0">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              <span className="font-semibold text-gray-900 text-sm">Link para os professores responderem externamente</span>
+              <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Ativo</span>
+            </div>
+            <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-gray-700 truncate">Avaliação Docente — Programa Acelera+</p>
+                <p className="text-xs text-[#2E8C99] font-mono truncate mt-0.5">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/avaliacao-docente/${FORM_ID_PUBLICO}` : `/avaliacao-docente/${FORM_ID_PUBLICO}`}
+                </p>
+              </div>
+              <a href={`/avaliacao-docente/${FORM_ID_PUBLICO}`} target="_blank" rel="noopener noreferrer"
+                className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-medium transition-colors border border-gray-200">
+                Abrir
+              </a>
+              <button onClick={copiarLink}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  linkCopiado ? 'bg-green-500 text-white' : 'bg-[#2E8C99] hover:bg-[#256e78] text-white'
+                }`}>
+                {linkCopiado ? (
+                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>Copiado!</>
+                ) : (
+                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar link</>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">📱 Envie este link pelo WhatsApp, e-mail ou grupo de professores. Não precisa de login.</p>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <StatCard title="Respostas" value={respostas.length} icon={<IconTeacher size={18} />} color="blue" />
             <StatCard title="Impl. Média" value={respostas.length > 0 ? Math.round(respostas.reduce((a,r) => a+r.indiceImplementacao,0)/respostas.length)+'%' : '—'} icon={<IconTeacher size={18} />} color="orange" />
