@@ -994,17 +994,34 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                 <h3 className="font-semibold text-gray-900">Respostas ({total})</h3>
                 {total > 0 && (
                   <button onClick={() => {
-                    const rows = [['Formador','Escola','Data','Nota Média','Geral','Recomenda','Melhor','Melhorar'].join(','),
-                      ...respostasFormador.map((r: any) => [
-                        r.nomeFormador||'', r.escola||'', r.dataFormacao||'',
-                        (criterios.map((_,i)=>r.criterios?.[i]??0).reduce((a:number,b:number)=>a+b,0)/criterios.length).toFixed(1),
-                        r.avaliacaoGeral||'', r.recomendaria||'',
-                        `"${(r.melhor||'').replace(/"/g,'""')}"`,
-                        `"${(r.melhorar||'').replace(/"/g,'""')}"`,
-                      ].join(','))];
-                    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                    const esc = (s: string) => `"${(s||'').replace(/"/g,'""')}"`;
+                    const header = [
+                      'Formador','Escola','Município','Data',
+                      // Notas por critério
+                      'C1-Domínio conteúdo','C2-Clareza','C3-Comunicação','C4-Respondeu dúvidas',
+                      'C5-Preparo','C6-Exemplos práticos','C7-Estimulou participação',
+                      'C8-Engajamento','C9-Respeito','C10-Gestão do tempo',
+                      'Nota Média','Avaliação Geral','Recomenda',
+                      // Perguntas abertas
+                      'P1-O que o formador fez de melhor?',
+                      'P2-O que poderia ser melhorado?',
+                      'P3-Conteúdo para aprofundar?',
+                      'P4-Comentários adicionais',
+                    ].join(',');
+                    const rows = [header,
+                      ...respostasFormador.map((r: any) => {
+                        const notas = criterios.map((_,i)=>r.criterios?.[i]??0);
+                        const media = (notas.reduce((a:number,b:number)=>a+b,0)/notas.length).toFixed(1);
+                        return [
+                          esc(r.nomeFormador), esc(r.escola), esc(r.municipio), esc(r.dataFormacao),
+                          ...notas,
+                          media, esc(r.avaliacaoGeral), esc(r.recomendaria),
+                          esc(r.melhor), esc(r.melhorar), esc(r.aprofundar), esc(r.comentarios),
+                        ].join(',');
+                      })];
+                    const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
                     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-                    a.download = 'avaliacao_formador.csv'; a.click();
+                    a.download = `avaliacao_formador_${new Date().toISOString().slice(0,10)}.csv`; a.click();
                   }} className="flex items-center gap-1.5 text-xs font-medium text-[#2E8C99] hover:text-[#226e78] border border-[#2E8C99]/30 px-3 py-1.5 rounded-lg transition-colors">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Exportar CSV
