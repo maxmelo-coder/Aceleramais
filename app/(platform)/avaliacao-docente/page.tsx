@@ -230,23 +230,35 @@ export default function AvaliacaoDocentePage() {
     { key: 'comentarios', label: 'Comentários ou sugestões adicionais' },
   ];
 
-  // Merge: server é fonte da verdade.
-  // Itens locais SEM serverSavedAt ainda são novos (acabaram de ser enviados, servidor pode não ter recebido ainda).
-  // Itens que estão só no local MAS têm serverSavedAt foram deletados do servidor → não adicionar.
+  // Merge ADITIVO — localStorage é o backup permanente, servidor é complementar.
+  // NUNCA remove do local. Adiciona itens do servidor que não estão no local.
+  // Reenvia ao servidor qualquer item local que não esteja lá (recupera após cold start).
   function mergeResponses(local: any[], server: any[]): any[] {
-    const serverIds = new Set(server.map((r: any) => r.id));
     const map = new Map<string, any>();
-    // Adiciona locais apenas se ainda não chegaram ao servidor (sem serverSavedAt = recém-enviados offline)
-    local.forEach(r => { if (!r.serverSavedAt || serverIds.has(r.id)) map.set(r.id, r); });
-    // Servidor sempre sobrescreve
-    server.forEach(r => map.set(r.id, r));
+    local.forEach(r => map.set(r.id, r));        // local como base
+    server.forEach(r => map.set(r.id, r));        // servidor complementa/atualiza
     return Array.from(map.values()).sort((a: any, b: any) =>
       new Date(b.submittedAt || b.createdAt || 0).getTime() -
       new Date(a.submittedAt || a.createdAt || 0).getTime()
     );
   }
 
-  // Na montagem: busca do servidor e faz merge com localStorage
+  // Reenvia ao servidor itens locais que não estão no servidor (recupera após cold start do Lambda)
+  async function reuploadMissing(local: any[], server: any[], endpoint: string) {
+    const serverIds = new Set(server.map((r: any) => r.id));
+    const missing = local.filter(r => !serverIds.has(r.id));
+    for (const r of missing) {
+      try {
+        await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(r),
+        });
+      } catch { /* offline */ }
+    }
+  }
+
+  // Na montagem: busca do servidor e faz merge ADITIVO com localStorage
   useEffect(() => {
     async function loadFromServer() {
       try {
@@ -255,14 +267,19 @@ export default function AvaliacaoDocentePage() {
           fetch('/api/docente').then(r => r.json()),
         ]);
         if (Array.isArray(rfRes)) {
-          const merged = mergeResponses(storageGet('acelera_forms_formador', []), rfRes);
+          const local = storageGet<any[]>('acelera_forms_formador', []);
+          const merged = mergeResponses(local, rfRes);
           setRespostasFormador(merged);
           storageSet('acelera_forms_formador', merged);
+          // Reenvia ao servidor qualquer item perdido por cold start
+          await reuploadMissing(local, rfRes, '/api/formador');
         }
         if (Array.isArray(rdRes)) {
-          const merged = mergeResponses(storageGet('acelera_forms_docente', []), rdRes);
+          const local = storageGet<any[]>('acelera_forms_docente', []);
+          const merged = mergeResponses(local, rdRes);
           setRespostas(merged);
           storageSet('acelera_forms_docente', merged);
+          await reuploadMissing(local, rdRes, '/api/docente');
         }
         setSyncedAt(new Date());
       } catch {/* offline */}
@@ -291,14 +308,18 @@ export default function AvaliacaoDocentePage() {
         fetch('/api/docente').then(r => r.json()),
       ]);
       if (Array.isArray(rfRes)) {
-        const merged = mergeResponses(storageGet('acelera_forms_formador', []), rfRes);
+        const local = storageGet<any[]>('acelera_forms_formador', []);
+        const merged = mergeResponses(local, rfRes);
         setRespostasFormador(merged);
         storageSet('acelera_forms_formador', merged);
+        await reuploadMissing(local, rfRes, '/api/formador');
       }
       if (Array.isArray(rdRes)) {
-        const merged = mergeResponses(storageGet('acelera_forms_docente', []), rdRes);
+        const local = storageGet<any[]>('acelera_forms_docente', []);
+        const merged = mergeResponses(local, rdRes);
         setRespostas(merged);
         storageSet('acelera_forms_docente', merged);
+        await reuploadMissing(local, rdRes, '/api/docente');
       }
     } catch {/* offline */}
     setSyncedAt(new Date());
@@ -604,15 +625,7 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                         <td className="px-6 py-4 text-center font-semibold text-green-600">{r.indiceAprendizagem}%</td>
                         <td className="px-6 py-4 text-center font-semibold">{r.b9_nps >= 0 ? r.b9_nps : '—'}</td>
                         <td className="px-6 py-4 text-center text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</td>
-                        <td className="px-6 py-4 text-center">
-                          <button onClick={async () => { if(confirm('Excluir?')) {
-                            const updated = respostas.filter(x => x.id !== r.id);
-                            setRespostas(updated);
-                            storageSet('acelera_forms_docente', updated);
-                            try { await fetch('/api/docente', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {}
-                          } }}
-                            className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><TrashIcon /></button>
-                        </td>
+                        <td className="px-6 py-4 text-center text-gray-300 text-xs">—</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1046,7 +1059,6 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                         <th className="px-4 py-3 text-center">Avaliação Geral</th>
                         <th className="px-4 py-3 text-center">Recomenda</th>
                         <th className="px-4 py-3 text-center">Respostas</th>
-                        <th className="px-4 py-3 text-center">Excluir</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -1066,17 +1078,6 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                                 title="Ver respostas abertas"
                                 className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                              </button>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <button onClick={async () => { if(confirm('Excluir?')) {
-                                const updated = respostasFormador.filter((x:any) => x.id !== r.id);
-                                setRespostasFormador(updated);
-                                storageSet('acelera_forms_formador', updated);
-                                try { await fetch('/api/formador', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {}
-                              } }}
-                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/></svg>
                               </button>
                             </td>
                           </tr>
