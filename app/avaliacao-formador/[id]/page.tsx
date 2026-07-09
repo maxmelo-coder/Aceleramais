@@ -95,15 +95,26 @@ export default function AvaliacaoFormadorPage() {
     return errs;
   }
 
-  function next() {
+  async function next() {
     const errs = validate();
     if (errs.length > 0) { setErrors(errs); return; }
     setErrors([]);
     if (step < STEPS.length - 1) { setStep(s => s + 1); return; }
-    // Submit
-    const all = storageGet<any[]>('acelera_forms_formador', []);
+    // Submit — salva localmente E no servidor para sincronizar entre dispositivos
     const entry = { ...data, id: 'ff_' + Date.now(), submittedAt: new Date().toISOString() };
+    // 1. localStorage (fallback offline)
+    const all = storageGet<any[]>('acelera_forms_formador', []);
     storageSet('acelera_forms_formador', [...all, entry]);
+    // 2. API servidor (sincronização cross-device)
+    try {
+      await fetch('/api/formador', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      });
+    } catch {
+      // offline — resposta já salva no localStorage
+    }
     setSubmitted(true);
   }
 

@@ -220,17 +220,43 @@ export default function AvaliacaoDocentePage() {
   const [respostas, setRespostas] = useState<DocenteFormData[]>(() => storageGet('acelera_forms_docente', []));
   const [respostasFormador, setRespostasFormador] = useState<any[]>(() => storageGet('acelera_forms_formador', []));
   const [syncedAt, setSyncedAt] = useState<Date>(new Date());
+  const [syncing, setSyncing] = useState(false);
 
-  // Persiste apenas quando a mudança veio da própria plataforma (exclusão, demo)
-  // NÃO persiste na montagem inicial para não sobrescrever respostas do formulário público
-  const isFirstRender = React.useRef(true);
-  useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    storageSet('acelera_forms_formador', respostasFormador);
-  }, [respostasFormador]);
+  // Merge: remove duplicatas por id, server tem prioridade
+  function mergeResponses(local: any[], server: any[]): any[] {
+    const map = new Map<string, any>();
+    local.forEach(r => map.set(r.id, r));
+    server.forEach(r => map.set(r.id, r)); // server sobrescreve local (mais recente)
+    return Array.from(map.values()).sort((a, b) =>
+      new Date(b.submittedAt || b.createdAt || 0).getTime() -
+      new Date(a.submittedAt || a.createdAt || 0).getTime()
+    );
+  }
 
-  // Sincroniza quando outra aba grava no localStorage (formulário público preenchido)
+  // Na montagem: busca do servidor e faz merge com localStorage
   useEffect(() => {
+    async function loadFromServer() {
+      try {
+        const [rfRes, rdRes] = await Promise.all([
+          fetch('/api/formador').then(r => r.json()),
+          fetch('/api/docente').then(r => r.json()),
+        ]);
+        if (Array.isArray(rfRes)) {
+          const merged = mergeResponses(storageGet('acelera_forms_formador', []), rfRes);
+          setRespostasFormador(merged);
+          storageSet('acelera_forms_formador', merged);
+        }
+        if (Array.isArray(rdRes)) {
+          const merged = mergeResponses(storageGet('acelera_forms_docente', []), rdRes);
+          setRespostas(merged);
+          storageSet('acelera_forms_docente', merged);
+        }
+        setSyncedAt(new Date());
+      } catch {/* offline */}
+    }
+    loadFromServer();
+
+    // Sincroniza quando outra aba grava no localStorage
     function onStorage(e: StorageEvent) {
       if (e.key === 'acelera_forms_formador') {
         setRespostasFormador(storageGet('acelera_forms_formador', []));
@@ -244,9 +270,26 @@ export default function AvaliacaoDocentePage() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  function syncFormador() {
-    setRespostasFormador(storageGet('acelera_forms_formador', []));
+  async function syncFormador() {
+    setSyncing(true);
+    try {
+      const [rfRes, rdRes] = await Promise.all([
+        fetch('/api/formador').then(r => r.json()),
+        fetch('/api/docente').then(r => r.json()),
+      ]);
+      if (Array.isArray(rfRes)) {
+        const merged = mergeResponses(storageGet('acelera_forms_formador', []), rfRes);
+        setRespostasFormador(merged);
+        storageSet('acelera_forms_formador', merged);
+      }
+      if (Array.isArray(rdRes)) {
+        const merged = mergeResponses(storageGet('acelera_forms_docente', []), rdRes);
+        setRespostas(merged);
+        storageSet('acelera_forms_docente', merged);
+      }
+    } catch {/* offline */}
     setSyncedAt(new Date());
+    setSyncing(false);
   }
 
   const [linkCopiado, setLinkCopiado] = useState(false);
@@ -549,7 +592,7 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                         <td className="px-6 py-4 text-center font-semibold">{r.b9_nps >= 0 ? r.b9_nps : '—'}</td>
                         <td className="px-6 py-4 text-center text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</td>
                         <td className="px-6 py-4 text-center">
-                          <button onClick={() => { if(confirm('Excluir?')) setRespostas(prev => prev.filter(x => x.id !== r.id)); }}
+                          <button onClick={async () => { if(confirm('Excluir?')) { setRespostas(prev => prev.filter(x => x.id !== r.id)); try { await fetch('/api/docente', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {} } }}
                             className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><TrashIcon /></button>
                         </td>
                       </tr>
@@ -855,10 +898,13 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                 Última sincronização: {syncedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 <span className="text-gray-400">· {total} resposta{total !== 1 ? 's' : ''}</span>
               </div>
-              <button onClick={syncFormador}
-                className="flex items-center gap-1.5 bg-[#2E8C99] hover:bg-[#256e78] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                Atualizar respostas
+              <button onClick={syncFormador} disabled={syncing}
+                className={`flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${syncing ? 'bg-gray-400' : 'bg-[#2E8C99] hover:bg-[#256e78]'}`}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  className={syncing ? 'animate-spin' : ''}>
+                  <polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                {syncing ? 'Sincronizando...' : 'Atualizar respostas'}
               </button>
             </div>
 
@@ -980,7 +1026,7 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                             <td className="px-4 py-3 text-center text-xs text-gray-700">{r.avaliacaoGeral||'—'}</td>
                             <td className="px-4 py-3 text-center"><Badge label={r.recomendaria||'—'} variant={r.recomendaria==='Sim'?'green':r.recomendaria==='Não'?'red':'orange'} /></td>
                             <td className="px-4 py-3 text-center">
-                              <button onClick={() => { if(confirm('Excluir?')) setRespostasFormador(prev => prev.filter((x:any) => x.id !== r.id)); }}
+                              <button onClick={async () => { if(confirm('Excluir?')) { setRespostasFormador(prev => prev.filter((x:any) => x.id !== r.id)); try { await fetch('/api/formador', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {} } }}
                                 className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/></svg>
                               </button>

@@ -153,7 +153,7 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
     return { acertos, score };
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const { acertos, score } = calcularResultado();
     setResultado({ acertos, score });
 
@@ -177,8 +177,19 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
       melhorar,
       submittedAt: new Date().toISOString(),
     };
+    // 1. localStorage (fallback offline)
     const existing = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
     storageSet('acelera_respostas_estudantes', [...existing, resposta]);
+    // 2. API servidor (sincronização cross-device)
+    try {
+      await fetch('/api/estudantes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resposta),
+      });
+    } catch {
+      // offline — resposta já salva no localStorage
+    }
     setSubmitted(true);
   }
 

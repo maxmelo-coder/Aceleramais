@@ -179,7 +179,7 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
     return true;
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const indices = calcIndices(data);
     const final: DocenteFormData = {
       ...data,
@@ -187,8 +187,19 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
       id: 'doc_' + Date.now(),
       createdAt: new Date().toISOString(),
     };
+    // 1. localStorage (fallback offline)
     const existing = storageGet<DocenteFormData[]>('acelera_forms_docente', []);
     storageSet('acelera_forms_docente', [...existing, final]);
+    // 2. API servidor (sincronização cross-device)
+    try {
+      await fetch('/api/docente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(final),
+      });
+    } catch {
+      // offline — resposta já salva no localStorage
+    }
     setSubmitted(true);
   }
 

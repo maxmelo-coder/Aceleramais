@@ -150,6 +150,23 @@ export default function AvaliacoesPage() {
   useEffect(() => { storageSet('acelera_avaliacoes', avaliacoes); }, [avaliacoes]);
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
+  const [respostasServidor, setRespostasServidor] = useState<RespostaEstudante[]>([]);
+
+  // Carrega respostas do servidor na montagem e faz merge com localStorage
+  useEffect(() => {
+    fetch('/api/estudantes').then(r => r.json()).then((server: RespostaEstudante[]) => {
+      if (!Array.isArray(server)) return;
+      const local = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
+      const map = new Map<string, RespostaEstudante>();
+      local.forEach(r => map.set(r.id, r));
+      server.forEach(r => map.set(r.id, r));
+      const merged = Array.from(map.values());
+      storageSet('acelera_respostas_estudantes', merged);
+      setRespostasServidor(merged);
+    }).catch(() => {
+      setRespostasServidor(storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []));
+    });
+  }, []);
 
   const publicadas = avaliacoes.filter(a => a.status === 'publicada').length;
   const aplicadas = avaliacoes.filter(a => a.status === 'aplicada').length;
@@ -187,8 +204,10 @@ export default function AvaliacoesPage() {
     setForm({ ...form, [key]: value } as typeof form);
   }
 
-  // Respostas panel data
-  const todasRespostas = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
+  // Respostas panel data — usa dados do servidor (já mergeado com localStorage)
+  const todasRespostas = respostasServidor.length > 0
+    ? respostasServidor
+    : storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
   const respostasFiltradas = respostasPanel
     ? todasRespostas.filter(r => r.assessmentId === respostasPanel.id)
     : [];
