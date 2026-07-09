@@ -221,6 +221,14 @@ export default function AvaliacaoDocentePage() {
   const [respostasFormador, setRespostasFormador] = useState<any[]>(() => storageGet('acelera_forms_formador', []));
   const [syncedAt, setSyncedAt] = useState<Date>(new Date());
   const [syncing, setSyncing] = useState(false);
+  const [viewRespostaFormador, setViewRespostaFormador] = useState<any | null>(null);
+
+  const PERGUNTAS_ABERTAS = [
+    { key: 'melhor',      label: 'O que o formador fez de melhor durante o treinamento?' },
+    { key: 'melhorar',    label: 'O que poderia ser melhorado?' },
+    { key: 'aprofundar',  label: 'Houve algum conteúdo que gostaria que fosse aprofundado?' },
+    { key: 'comentarios', label: 'Comentários ou sugestões adicionais' },
+  ];
 
   // Merge: server é fonte da verdade.
   // Itens locais SEM serverSavedAt ainda são novos (acabaram de ser enviados, servidor pode não ter recebido ainda).
@@ -1020,7 +1028,8 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                         <th className="px-4 py-3 text-center">Nota Média</th>
                         <th className="px-4 py-3 text-center">Avaliação Geral</th>
                         <th className="px-4 py-3 text-center">Recomenda</th>
-                        <th className="px-4 py-3 text-center">Ações</th>
+                        <th className="px-4 py-3 text-center">Respostas</th>
+                        <th className="px-4 py-3 text-center">Excluir</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -1036,12 +1045,17 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                             <td className="px-4 py-3 text-center text-xs text-gray-700">{r.avaliacaoGeral||'—'}</td>
                             <td className="px-4 py-3 text-center"><Badge label={r.recomendaria||'—'} variant={r.recomendaria==='Sim'?'green':r.recomendaria==='Não'?'red':'orange'} /></td>
                             <td className="px-4 py-3 text-center">
+                              <button onClick={() => setViewRespostaFormador(r)}
+                                title="Ver respostas abertas"
+                                className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                              </button>
+                            </td>
+                            <td className="px-4 py-3 text-center">
                               <button onClick={async () => { if(confirm('Excluir?')) {
-                                // 1. Remove do state e do localStorage imediatamente
                                 const updated = respostasFormador.filter((x:any) => x.id !== r.id);
                                 setRespostasFormador(updated);
                                 storageSet('acelera_forms_formador', updated);
-                                // 2. Remove do servidor
                                 try { await fetch('/api/formador', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {}
                               } }}
                                 className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
@@ -1056,9 +1070,134 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                 </div>
               )}
             </div>
+
+            {/* ── Respostas Abertas consolidadas ──────────────────────── */}
+            {total > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100">
+                  <h3 className="font-semibold text-gray-900">Respostas Abertas — Todas as Contribuições</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Todas as respostas discursivas dos participantes, por pergunta</p>
+                </div>
+                <div className="p-6 space-y-6">
+                  {PERGUNTAS_ABERTAS.map(({ key, label }, qi) => {
+                    const resps = respostasFormador
+                      .map((r: any) => ({ texto: r[key], autor: r.escola || r.nomeFormador || '—', data: r.dataFormacao }))
+                      .filter((x: any) => x.texto && x.texto.trim());
+                    return (
+                      <div key={key}>
+                        <p className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-[#2E8C99]/10 text-[#2E8C99] text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                            {qi + 1}
+                          </span>
+                          {label}
+                          <span className="ml-auto text-xs text-gray-400 font-normal">{resps.length} resposta{resps.length !== 1 ? 's' : ''}</span>
+                        </p>
+                        {resps.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic pl-7">Nenhuma resposta para esta pergunta.</p>
+                        ) : (
+                          <div className="space-y-2 pl-7">
+                            {resps.map((resp: any, i: number) => (
+                              <div key={i} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                                <p className="text-sm text-gray-800 leading-relaxed">"{resp.texto}"</p>
+                                <p className="text-[11px] text-gray-400 mt-1.5">{resp.autor}{resp.data ? ` · ${resp.data}` : ''}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}
+
+      {/* ── Modal: Respostas abertas de um participante ────────────────────── */}
+      {viewRespostaFormador && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setViewRespostaFormador(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-gray-900">Respostas Abertas</h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {viewRespostaFormador.escola || '—'} · {viewRespostaFormador.dataFormacao || '—'}
+                </p>
+              </div>
+              <button onClick={() => setViewRespostaFormador(null)} className="text-gray-400 hover:text-gray-600 p-1">
+                <IconX size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-6 space-y-5">
+              {/* Identificação */}
+              <div className="flex gap-3 flex-wrap">
+                <span className="bg-[#2E8C99]/10 text-[#2E8C99] text-xs font-semibold px-3 py-1 rounded-full">
+                  Formador: {viewRespostaFormador.nomeFormador || '—'}
+                </span>
+                <span className="bg-[#F48B1B]/10 text-[#F48B1B] text-xs font-semibold px-3 py-1 rounded-full">
+                  {viewRespostaFormador.avaliacaoGeral || '—'}
+                </span>
+                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                  viewRespostaFormador.recomendaria === 'Sim' ? 'bg-green-100 text-green-700' :
+                  viewRespostaFormador.recomendaria === 'Não' ? 'bg-red-100 text-red-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>
+                  Recomenda: {viewRespostaFormador.recomendaria || '—'}
+                </span>
+              </div>
+              {/* Perguntas abertas */}
+              {PERGUNTAS_ABERTAS.map(({ key, label }, i) => (
+                <div key={key}>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                    {i + 1}. {label}
+                  </p>
+                  {viewRespostaFormador[key] ? (
+                    <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                      <p className="text-sm text-gray-800 leading-relaxed">{viewRespostaFormador[key]}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">Não respondido.</p>
+                  )}
+                </div>
+              ))}
+              {/* Critérios detalhados */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Notas por critério</p>
+                <div className="space-y-1.5">
+                  {[
+                    'Domínio do conteúdo','Clareza na explicação','Comunicação acessível',
+                    'Respondeu dúvidas','Preparo e organização','Exemplos práticos',
+                    'Estimulou participação','Engajamento','Respeito e cordialidade','Gestão do tempo',
+                  ].map((c, i) => {
+                    const nota = viewRespostaFormador.criterios?.[i] ?? 0;
+                    const cor = nota >= 4 ? '#059669' : nota >= 3 ? '#F48B1B' : '#E30613';
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className="text-xs text-gray-600 flex-1 truncate">{c}</span>
+                        <div className="flex gap-0.5">
+                          {[1,2,3,4,5].map(n => (
+                            <div key={n} className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
+                              style={{ background: n <= nota ? cor : '#f3f4f6', color: n <= nota ? 'white' : '#9ca3af' }}>
+                              {n}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100">
+              <button onClick={() => setViewRespostaFormador(null)}
+                className="w-full py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Wizard Modal ───────────────────────────────────────────────────── */}
       {showWizard && (
