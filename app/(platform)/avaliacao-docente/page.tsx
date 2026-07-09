@@ -219,7 +219,36 @@ export default function AvaliacaoDocentePage() {
   const [forms, setForms] = useState<TeacherEvaluationForm[]>(() => storageGet('acelera_forms_docente_meta', []));
   const [respostas, setRespostas] = useState<DocenteFormData[]>(() => storageGet('acelera_forms_docente', []));
   const [respostasFormador, setRespostasFormador] = useState<any[]>(() => storageGet('acelera_forms_formador', []));
-  useEffect(() => { storageSet('acelera_forms_formador', respostasFormador); }, [respostasFormador]);
+  const [syncedAt, setSyncedAt] = useState<Date>(new Date());
+
+  // Persiste apenas quando a mudança veio da própria plataforma (exclusão, demo)
+  // NÃO persiste na montagem inicial para não sobrescrever respostas do formulário público
+  const isFirstRender = React.useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    storageSet('acelera_forms_formador', respostasFormador);
+  }, [respostasFormador]);
+
+  // Sincroniza quando outra aba grava no localStorage (formulário público preenchido)
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'acelera_forms_formador') {
+        setRespostasFormador(storageGet('acelera_forms_formador', []));
+        setSyncedAt(new Date());
+      }
+      if (e.key === 'acelera_forms_docente') {
+        setRespostas(storageGet('acelera_forms_docente', []));
+      }
+    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  function syncFormador() {
+    setRespostasFormador(storageGet('acelera_forms_formador', []));
+    setSyncedAt(new Date());
+  }
+
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [linkFormadorCopiado, setLinkFormadorCopiado] = useState(false);
 
@@ -712,12 +741,52 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
           'Demonstrou respeito e cordialidade com os participantes',
           'O tempo do treinamento foi bem administrado',
         ];
+
+        function seedDemo() {
+          const nomes = ['Ana Paula', 'Carlos Souza', 'Maria Lima', 'João Pedro', 'Fernanda Costa', 'Rafael Alves', 'Juliana Neves', 'Marcos Vieira'];
+          const escolas = ['E.M. João Paulo II', 'E.M. Monteiro Lobato', 'E.E. Dom Bosco', 'EMEF Santos Dumont'];
+          const gerais = ['Excelente','Muito Bom','Muito Bom','Bom','Excelente','Muito Bom','Excelente','Bom'];
+          const recomendas = ['Sim','Sim','Sim','Talvez','Sim','Sim','Sim','Sim'];
+          const notas = [
+            [5,5,4,5,5,5,4,5,5,5],
+            [4,4,5,4,4,5,4,4,5,4],
+            [5,5,5,5,5,5,5,5,5,5],
+            [3,4,4,3,4,3,3,4,4,3],
+            [5,4,5,5,5,4,5,5,5,5],
+            [4,5,4,4,5,5,4,4,5,4],
+            [5,5,5,5,5,5,5,5,5,5],
+            [4,3,4,4,3,4,3,4,4,4],
+          ];
+          const demo = nomes.map((n, i) => ({
+            id: 'demo_' + i,
+            nomeFormador: 'Prof. Ricardo Melo',
+            escola: escolas[i % escolas.length],
+            municipio: 'São Paulo',
+            dataFormacao: `2025-07-0${(i % 9) + 1}`,
+            criterios: notas[i],
+            avaliacaoGeral: gerais[i],
+            recomendaria: recomendas[i],
+            melhor: 'Excelente didática e domínio do conteúdo.',
+            melhorar: 'Poderia incluir mais exercícios práticos.',
+            aprofundar: 'Gestão financeira básica.',
+            comentarios: 'Treinamento muito produtivo!',
+            submittedAt: new Date().toISOString(),
+            _isDemo: true,
+          }));
+          setRespostasFormador(demo);
+        }
+
+        function limparDemo() {
+          setRespostasFormador([]);
+        }
+
         const avgCriterio = (idx: number) => total === 0 ? 0 :
           +(respostasFormador.reduce((a: number, r: any) => a + (r.criterios?.[idx] ?? 0), 0) / total).toFixed(1);
         const geralCount: Record<string, number> = {};
         respostasFormador.forEach((r: any) => { if (r.avaliacaoGeral) geralCount[r.avaliacaoGeral] = (geralCount[r.avaliacaoGeral]||0)+1; });
         const recomendaCount: Record<string, number> = {};
         respostasFormador.forEach((r: any) => { if (r.recomendaria) recomendaCount[r.recomendaria] = (recomendaCount[r.recomendaria]||0)+1; });
+        const hasDemo = respostasFormador.some((r: any) => r._isDemo);
         return (
           <div className="space-y-6">
             {/* Link Banner */}
@@ -753,6 +822,44 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                 </button>
               </div>
               <p className="text-xs text-gray-400 mt-3">Compartilhe com os participantes após o treinamento. Não precisa de login.</p>
+            </div>
+
+            {/* Demo / clear banner */}
+            {total === 0 ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center gap-4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" className="flex-shrink-0">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-800">Nenhuma resposta ainda</p>
+                  <p className="text-xs text-amber-700 mt-0.5">Compartilhe o link com os participantes ou visualize como o painel ficará com dados.</p>
+                </div>
+                <button onClick={seedDemo}
+                  className="flex-shrink-0 flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Visualizar com dados demo
+                </button>
+              </div>
+            ) : hasDemo && (
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3 flex items-center gap-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <p className="text-xs text-blue-700 flex-1">Você está visualizando <strong>dados de demonstração</strong>. As respostas reais dos participantes aparecerão aqui automaticamente.</p>
+                <button onClick={limparDemo} className="text-xs text-blue-600 hover:text-blue-800 font-semibold underline flex-shrink-0">Limpar demo</button>
+              </div>
+            )}
+
+            {/* Sync bar */}
+            <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Última sincronização: {syncedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                <span className="text-gray-400">· {total} resposta{total !== 1 ? 's' : ''}</span>
+              </div>
+              <button onClick={syncFormador}
+                className="flex items-center gap-1.5 bg-[#2E8C99] hover:bg-[#256e78] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Atualizar respostas
+              </button>
             </div>
 
             {/* KPIs */}
