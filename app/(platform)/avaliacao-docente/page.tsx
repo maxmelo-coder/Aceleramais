@@ -222,12 +222,17 @@ export default function AvaliacaoDocentePage() {
   const [syncedAt, setSyncedAt] = useState<Date>(new Date());
   const [syncing, setSyncing] = useState(false);
 
-  // Merge: remove duplicatas por id, server tem prioridade
+  // Merge: server é fonte da verdade.
+  // Itens locais SEM serverSavedAt ainda são novos (acabaram de ser enviados, servidor pode não ter recebido ainda).
+  // Itens que estão só no local MAS têm serverSavedAt foram deletados do servidor → não adicionar.
   function mergeResponses(local: any[], server: any[]): any[] {
+    const serverIds = new Set(server.map((r: any) => r.id));
     const map = new Map<string, any>();
-    local.forEach(r => map.set(r.id, r));
-    server.forEach(r => map.set(r.id, r)); // server sobrescreve local (mais recente)
-    return Array.from(map.values()).sort((a, b) =>
+    // Adiciona locais apenas se ainda não chegaram ao servidor (sem serverSavedAt = recém-enviados offline)
+    local.forEach(r => { if (!r.serverSavedAt || serverIds.has(r.id)) map.set(r.id, r); });
+    // Servidor sempre sobrescreve
+    server.forEach(r => map.set(r.id, r));
+    return Array.from(map.values()).sort((a: any, b: any) =>
       new Date(b.submittedAt || b.createdAt || 0).getTime() -
       new Date(a.submittedAt || a.createdAt || 0).getTime()
     );
@@ -592,7 +597,12 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                         <td className="px-6 py-4 text-center font-semibold">{r.b9_nps >= 0 ? r.b9_nps : '—'}</td>
                         <td className="px-6 py-4 text-center text-gray-500 text-xs">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</td>
                         <td className="px-6 py-4 text-center">
-                          <button onClick={async () => { if(confirm('Excluir?')) { setRespostas(prev => prev.filter(x => x.id !== r.id)); try { await fetch('/api/docente', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {} } }}
+                          <button onClick={async () => { if(confirm('Excluir?')) {
+                            const updated = respostas.filter(x => x.id !== r.id);
+                            setRespostas(updated);
+                            storageSet('acelera_forms_docente', updated);
+                            try { await fetch('/api/docente', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {}
+                          } }}
                             className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><TrashIcon /></button>
                         </td>
                       </tr>
@@ -1026,7 +1036,14 @@ ${rs.map(r => `<tr><td>${r.nomeProfessor||'—'}</td><td>${r.escola||'—'}</td>
                             <td className="px-4 py-3 text-center text-xs text-gray-700">{r.avaliacaoGeral||'—'}</td>
                             <td className="px-4 py-3 text-center"><Badge label={r.recomendaria||'—'} variant={r.recomendaria==='Sim'?'green':r.recomendaria==='Não'?'red':'orange'} /></td>
                             <td className="px-4 py-3 text-center">
-                              <button onClick={async () => { if(confirm('Excluir?')) { setRespostasFormador(prev => prev.filter((x:any) => x.id !== r.id)); try { await fetch('/api/formador', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {} } }}
+                              <button onClick={async () => { if(confirm('Excluir?')) {
+                                // 1. Remove do state e do localStorage imediatamente
+                                const updated = respostasFormador.filter((x:any) => x.id !== r.id);
+                                setRespostasFormador(updated);
+                                storageSet('acelera_forms_formador', updated);
+                                // 2. Remove do servidor
+                                try { await fetch('/api/formador', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: r.id}) }); } catch {}
+                              } }}
                                 className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/></svg>
                               </button>
