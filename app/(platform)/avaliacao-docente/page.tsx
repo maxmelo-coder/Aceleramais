@@ -230,6 +230,12 @@ export default function AvaliacaoDocentePage() {
     { key: 'comentarios', label: 'Comentários ou sugestões adicionais' },
   ];
 
+  // Retorna headers com token de autenticação para chamadas GET protegidas
+  function authHeaders(): HeadersInit {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eleva_token') : null;
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+
   // Merge ADITIVO — localStorage é o backup permanente, servidor é complementar.
   // NUNCA remove do local. Adiciona itens do servidor que não estão no local.
   // Reenvia ao servidor qualquer item local que não esteja lá (recupera após cold start).
@@ -263,8 +269,8 @@ export default function AvaliacaoDocentePage() {
     async function loadFromServer() {
       try {
         const [rfRes, rdRes] = await Promise.all([
-          fetch('/api/formador').then(r => r.json()),
-          fetch('/api/docente').then(r => r.json()),
+          fetch('/api/formador', { headers: authHeaders() }).then(r => r.json()),
+          fetch('/api/docente',  { headers: authHeaders() }).then(r => r.json()),
         ]);
         if (Array.isArray(rfRes)) {
           const local = storageGet<any[]>('acelera_forms_formador', []);

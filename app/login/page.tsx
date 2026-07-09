@@ -2,12 +2,6 @@
 import React, { useState } from 'react';
 import { IconCheck, IconEye } from '@/components/Icons';
 
-const USERS = [
-  { email: 'admin@eleva.com.br',       password: 'Eleva@2025',    name: 'Administrador Acelera+',     role: 'Super Administrador' },
-  { email: 'secretaria@limoeiro.al.gov.br', password: 'Sec@2025', name: 'Sec. Francisco das Chagas', role: 'Secretaria Municipal' },
-  { email: 'gestor@escola.edu.br',      password: 'Gestor@2025',   name: 'Gestor Escolar',           role: 'Gestor Escolar' },
-];
-
 export default function ElevaLogin() {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -15,29 +9,33 @@ export default function ElevaLogin() {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      const user = USERS.find(u => u.email === email.trim().toLowerCase() && u.password === password);
-      if (user) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('eleva_user', JSON.stringify({ name: user.name, role: user.role, email: user.email }));
-        }
-        window.location.href = '/dashboard';
-      } else {
-        setError('E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.');
-        setLoading(false);
-      }
-    }, 600);
-  }
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
 
-  function fillDemo(u: typeof USERS[0]) {
-    setEmail(u.email);
-    setPassword(u.password);
-    setError('');
+      const data = await res.json();
+
+      if (!res.ok || !data.token) {
+        setError(data.error || 'E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.');
+        setLoading(false);
+        return;
+      }
+
+      localStorage.setItem('eleva_token', data.token);
+      localStorage.setItem('eleva_user', JSON.stringify(data.user));
+      window.location.href = '/dashboard';
+    } catch {
+      setError('Falha de conexão. Verifique sua internet e tente novamente.');
+      setLoading(false);
+    }
   }
 
   return (

@@ -152,9 +152,14 @@ export default function AvaliacoesPage() {
   const [saved, setSaved] = useState(false);
   const [respostasServidor, setRespostasServidor] = useState<RespostaEstudante[]>([]);
 
+  function authHeaders(): HeadersInit {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eleva_token') : null;
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+
   // Carrega respostas do servidor na montagem e faz merge com localStorage
   useEffect(() => {
-    fetch('/api/estudantes').then(r => r.json()).then((server: RespostaEstudante[]) => {
+    fetch('/api/estudantes', { headers: authHeaders() }).then(r => r.json()).then((server: RespostaEstudante[]) => {
       if (!Array.isArray(server)) return;
       const local = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
       const map = new Map<string, RespostaEstudante>();

@@ -1,10 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart } from '@/components/Charts';
 import Badge from '@/components/Badge';
 import { IconReports, IconDownload, IconEye } from '@/components/Icons';
 import { useMunicipio } from '@/lib/municipio-context';
-import { storageGet } from '@/lib/storage';
+import { storageGet, storageSet } from '@/lib/storage';
 
 type ReportView = 'por_estudante' | 'por_turma' | 'por_escola' | 'rede_municipal' | 'ranking_municipio' | 'avaliacao_docente';
 
@@ -38,13 +38,44 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+function mergeById<T extends { id: string }>(local: T[], server: T[]): T[] {
+  const map = new Map<string, T>();
+  local.forEach(r => map.set(r.id, r));
+  server.forEach(r => map.set(r.id, r));
+  return Array.from(map.values());
+}
+
 export default function RelatoriosPage() {
   const { selected, all } = useMunicipio();
   const [tab, setTab] = useState<Tab>('Relatórios');
   const [reportView, setReportView] = useState<ReportView>('por_estudante');
 
-  const estudantes = storageGet<any[]>('acelera_respostas_estudantes', []);
-  const docentes   = storageGet<any[]>('acelera_forms_docente', []);
+  const [estudantes, setEstudantes] = useState<any[]>(() => storageGet<any[]>('acelera_respostas_estudantes', []));
+  const [docentes,   setDocentes]   = useState<any[]>(() => storageGet<any[]>('acelera_forms_docente', []));
+
+  // Busca dados do servidor e faz merge ADITIVO com localStorage
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eleva_token') : null;
+    const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    Promise.allSettled([
+      fetch('/api/estudantes', { headers }).then(r => r.ok ? r.json() : []),
+      fetch('/api/docente',    { headers }).then(r => r.ok ? r.json() : []),
+    ]).then(([resEst, resDoc]) => {
+      if (resEst.status === 'fulfilled' && Array.isArray(resEst.value)) {
+        const local = storageGet<any[]>('acelera_respostas_estudantes', []);
+        const merged = mergeById(local, resEst.value);
+        storageSet('acelera_respostas_estudantes', merged);
+        setEstudantes(merged);
+      }
+      if (resDoc.status === 'fulfilled' && Array.isArray(resDoc.value)) {
+        const local = storageGet<any[]>('acelera_forms_docente', []);
+        const merged = mergeById(local, resDoc.value);
+        storageSet('acelera_forms_docente', merged);
+        setDocentes(merged);
+      }
+    }).catch(() => { /* offline — usa localStorage */ });
+  }, []);
 
   // ─── Por Estudante ────────────────────────────────────────────
   function renderPorEstudante() {
