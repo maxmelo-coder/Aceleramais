@@ -310,8 +310,8 @@ export default function AvaliacaoDocentePage() {
     setSyncing(true);
     try {
       const [rfRes, rdRes] = await Promise.all([
-        fetch('/api/formador').then(r => r.json()),
-        fetch('/api/docente').then(r => r.json()),
+        fetch('/api/formador', { headers: authHeaders() }).then(r => r.json()),
+        fetch('/api/docente',  { headers: authHeaders() }).then(r => r.json()),
       ]);
       if (Array.isArray(rfRes)) {
         const local = storageGet<any[]>('acelera_forms_formador', []);

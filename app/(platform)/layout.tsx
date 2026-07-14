@@ -14,7 +14,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const stored = localStorage.getItem('eleva_user');
+    const token  = localStorage.getItem('eleva_token');
     if (!stored) {
+      router.replace('/login');
+    } else if (!token) {
+      // Sessão antiga (antes do novo sistema de auth) — força re-login para obter token
+      localStorage.removeItem('eleva_user');
       router.replace('/login');
     } else {
       setChecked(true);
