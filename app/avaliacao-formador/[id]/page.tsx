@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storageGet, storageSet } from '@/lib/storage';
 
 // ─── Critérios extraídos do documento "Avaliação de Treinamento" ──────────────
@@ -64,6 +64,43 @@ export default function AvaliacaoFormadorPage() {
   const [data, setData] = useState<FormData>(emptyForm());
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+
+  // Auto-recuperação: ao abrir o formulário, reencaminha ao servidor qualquer
+  // resposta salva localmente que ainda não foi sincronizada (ex.: após cold start do Lambda).
+  useEffect(() => {
+    async function reuploadLocal() {
+      const local = storageGet<any[]>('acelera_forms_formador', []);
+      if (local.length === 0) return;
+      try {
+        // Descobre quais IDs já estão no servidor
+        const res = await fetch('/api/formador/public-count');
+        // Se endpoint não existir, tenta reenviar todos silenciosamente
+        const serverIds = res.ok ? new Set((await res.json()).ids ?? []) : new Set();
+        const missing = local.filter((r: any) => !serverIds.has(r.id));
+        for (const entry of missing) {
+          try {
+            await fetch('/api/formador', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(entry),
+            });
+          } catch { /* sem internet */ }
+        }
+      } catch {
+        // Fallback: tenta reenviar todos (API ignora duplicados via id check)
+        for (const entry of storageGet<any[]>('acelera_forms_formador', [])) {
+          try {
+            await fetch('/api/formador', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(entry),
+            });
+          } catch { /* sem internet */ }
+        }
+      }
+    }
+    reuploadLocal();
+  }, []);
 
   function setF(key: keyof FormData, value: string) {
     setData(prev => ({ ...prev, [key]: value }));

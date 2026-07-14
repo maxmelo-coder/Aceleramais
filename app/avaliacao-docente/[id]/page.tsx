@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storageGet, storageSet } from '@/lib/storage';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -156,6 +156,19 @@ export default function AvaliacaoDocentePublicaPage({ params }: { params: Promis
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [data, setData] = useState<DocenteFormData>(() => ({ ...emptyForm(), formId }));
+
+  // Auto-recuperação: reencaminha ao servidor respostas salvas localmente após cold start
+  useEffect(() => {
+    const local = storageGet<any[]>('acelera_forms_docente', []);
+    if (local.length === 0) return;
+    local.forEach(entry => {
+      fetch('/api/docente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      }).catch(() => {});
+    });
+  }, []);
 
   function setF(field: keyof DocenteFormData, value: string | number | boolean | string[]) {
     setData(prev => ({ ...prev, [field]: value }));

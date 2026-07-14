@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storageGet, storageSet } from '@/lib/storage';
 import { getBancoQuestoesBySerie, getBancoQuestoesById } from '@/lib/banco-questoes';
 import type { BancoQuestoes } from '@/lib/banco-questoes';
@@ -87,6 +87,19 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [resultado, setResultado] = useState<{ acertos: number; score: number } | null>(null);
+
+  // Auto-recuperação: reencaminha ao servidor respostas salvas localmente após cold start
+  useEffect(() => {
+    const local = storageGet<any[]>('acelera_respostas_estudantes', []);
+    if (local.length === 0) return;
+    local.forEach(entry => {
+      fetch('/api/estudantes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      }).catch(() => {});
+    });
+  }, []);
 
   // Etapa 1 - Identificação
   // Se o link já define a série, pré-preenche e bloqueia o campo
