@@ -64,38 +64,30 @@ export default function AvaliacaoFormadorPage() {
   const [data, setData] = useState<FormData>(emptyForm());
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  // true = servidor não confirmou (dados salvos localmente, mas aguardando sync)
+  const [syncPending, setSyncPending] = useState(false);
 
   // Auto-recuperação: ao abrir o formulário, reencaminha ao servidor qualquer
-  // resposta salva localmente que ainda não foi sincronizada (ex.: após cold start do Lambda).
+  // resposta salva localmente que ainda não foi sincronizada.
+  // O endpoint POST /api/formador é idempotente (ignora IDs duplicados),
+  // portanto é seguro reenviar tudo — apenas entradas novas são gravadas.
   useEffect(() => {
     async function reuploadLocal() {
       const local = storageGet<any[]>('acelera_forms_formador', []);
       if (local.length === 0) return;
-      try {
-        // Descobre quais IDs já estão no servidor
-        const res = await fetch('/api/formador/public-count');
-        // Se endpoint não existir, tenta reenviar todos silenciosamente
-        const serverIds = res.ok ? new Set((await res.json()).ids ?? []) : new Set();
-        const missing = local.filter((r: any) => !serverIds.has(r.id));
-        for (const entry of missing) {
-          try {
-            await fetch('/api/formador', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(entry),
-            });
-          } catch { /* sem internet */ }
-        }
-      } catch {
-        // Fallback: tenta reenviar todos (API ignora duplicados via id check)
-        for (const entry of storageGet<any[]>('acelera_forms_formador', [])) {
-          try {
-            await fetch('/api/formador', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(entry),
-            });
-          } catch { /* sem internet */ }
+      for (const entry of local) {
+        try {
+          const res = await fetch('/api/formador', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entry),
+          });
+          if (!res.ok) {
+            console.warn('[avaliacao-formador] reupload falhou para id', entry.id, res.status);
+          }
+        } catch {
+          // offline — tentará novamente na próxima abertura
+          break;
         }
       }
     }
@@ -143,15 +135,24 @@ export default function AvaliacaoFormadorPage() {
     const all = storageGet<any[]>('acelera_forms_formador', []);
     storageSet('acelera_forms_formador', [...all, entry]);
     // 2. API servidor (sincronização cross-device)
+    let serverOk = false;
     try {
-      await fetch('/api/formador', {
+      const res = await fetch('/api/formador', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
       });
-    } catch {
+      serverOk = res.ok;
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.error('[avaliacao-formador] POST /api/formador falhou', res.status, errBody);
+      }
+    } catch (networkErr) {
       // offline — resposta já salva no localStorage
+      console.warn('[avaliacao-formador] POST offline, resposta em localStorage', networkErr);
     }
+    // Indica ao usuário se o servidor não confirmou (dados não perdidos — localStorage garante)
+    setSyncPending(!serverOk);
     setSubmitted(true);
   }
 
@@ -172,7 +173,18 @@ export default function AvaliacaoFormadorPage() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Avaliação enviada!</h2>
-          <p className="text-gray-500 text-sm mb-6">Obrigado pelo seu feedback. Ele é fundamental para a melhoria contínua dos nossos treinamentos.</p>
+          <p className="text-gray-500 text-sm mb-4">Obrigado pelo seu feedback. Ele é fundamental para a melhoria contínua dos nossos treinamentos.</p>
+          {syncPending && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-left">
+              <p className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Resposta salva localmente
+              </p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Sua resposta foi registrada neste dispositivo. Ela será enviada ao servidor automaticamente quando a conexão estiver disponível.
+              </p>
+            </div>
+          )}
           {mediaFinal && (
             <div className="bg-[#2E8C99]/10 rounded-2xl p-4 mb-4">
               <p className="text-xs text-gray-500 mb-1">Sua nota média para o formador</p>

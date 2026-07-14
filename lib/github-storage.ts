@@ -60,7 +60,9 @@ async function putFile(path: string, data: unknown[], sha: string): Promise<void
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(`GitHub PUT ${path}: ${res.status} ${JSON.stringify(err)}`);
+    const e = new Error(`GitHub PUT ${path}: ${res.status} ${JSON.stringify(err)}`);
+    (e as any).status = res.status;
+    throw e;
   }
 }
 
@@ -74,21 +76,43 @@ export async function readAll(path: string): Promise<unknown[]> {
 /**
  * Adiciona uma entrada se o id ainda não existir (idempotente).
  * Retorna o total de entradas após a operação.
+ *
+ * Implementa retry com backoff exponencial para tratar conflitos de
+ * escrita concorrente (HTTP 409 do GitHub quando duas requisições simultâneas
+ * tentam atualizar o mesmo arquivo com o mesmo sha).
  */
 export async function appendIfNew(
   path: string,
   entry: { id: string; [k: string]: unknown },
 ): Promise<{ added: boolean; total: number }> {
-  const { data, sha } = await getFile(path);
-  const arr = data as Array<{ id: string }>;
+  const MAX_RETRIES = 4;
+  const BASE_DELAY_MS = 150;
 
-  if (arr.some(r => r.id === entry.id)) {
-    return { added: false, total: arr.length };
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const { data, sha } = await getFile(path);
+    const arr = data as Array<{ id: string }>;
+
+    if (arr.some(r => r.id === entry.id)) {
+      return { added: false, total: arr.length };
+    }
+
+    const updated = [...arr, { ...entry, serverSavedAt: new Date().toISOString() }];
+    try {
+      await putFile(path, updated, sha);
+      return { added: true, total: updated.length };
+    } catch (e: any) {
+      const isConflict = e?.status === 409 || String(e).includes('409');
+      if (isConflict && attempt < MAX_RETRIES - 1) {
+        // Backoff exponencial: 150ms, 300ms, 600ms…
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue; // refaz o GET para obter o sha atualizado
+      }
+      throw e; // Esgotou tentativas ou erro não-409
+    }
   }
 
-  const updated = [...arr, { ...entry, serverSavedAt: new Date().toISOString() }];
-  await putFile(path, updated, sha);
-  return { added: true, total: updated.length };
+  throw new Error(`appendIfNew: max retries (${MAX_RETRIES}) exceeded for ${path}`);
 }
 
 /**
