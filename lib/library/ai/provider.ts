@@ -9,7 +9,7 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const MODEL = process.env.IA_ELEVA_MODEL ?? 'claude-sonnet-4-20250514';
+const MODEL = process.env.IA_ELEVA_MODEL ?? 'claude-haiku-4-5-20251001';
 const MAX_TOKENS = 2048;
 
 export async function runAI(request: AIRequest): Promise<AIResponse> {
