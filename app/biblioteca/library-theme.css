@@ -1,0 +1,17 @@
+/*
+ * Design tokens — Biblioteca Digital Eleva+ (área do município / pública).
+ * Reaproveita deliberadamente os tokens "bib-*" já definidos em
+ * app/biblioteca/admin/admin-theme.css (paleta ELEVA_BRAND, raios, sombras,
+ * desfoques, easing e tipografia) — eles não são exclusivos do admin, são o
+ * design system da Biblioteca Digital como um todo, e reaproveitar garante
+ * consistência visual entre a área administrativa e a área municipal sem
+ * duplicar valores. Este arquivo só adiciona o que falta: cores semânticas
+ * de estado, ainda não expostas pelo tema do admin.
+ */
+
+@theme inline {
+  /* Estados semânticos — usados em avisos, badges de progresso e mensagens. */
+  --color-lib-success: #168A5B;
+  --color-lib-alert: #B45309;
+  --color-lib-error: #C73535;
+}
