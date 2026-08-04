@@ -45,8 +45,8 @@ export function ChatInterface({ mode, placeholder = 'Escreva sua pergunta aqui..
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode, messages: newMessages }),
       });
-      if (!res.ok) throw new Error(`Erro ${res.status}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? `Erro ${res.status}`);
       setMessages(prev => [...prev, { role: 'assistant', content: data.content, sources: data.sources }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao conectar com a IA Eleva+');

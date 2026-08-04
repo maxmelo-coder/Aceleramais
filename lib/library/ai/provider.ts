@@ -49,6 +49,7 @@ export async function runAI(request: AIRequest): Promise<AIResponse> {
     return { content };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Erro desconhecido';
+    console.error('[IA Eleva+] Anthropic error:', msg, error);
     throw new Error(`AI provider error: ${msg}`);
   }
 }
