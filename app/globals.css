@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "./biblioteca/admin/admin-theme.css";
+@import "./biblioteca/library-theme.css";
 
 @theme inline {
   --color-el-orange: #F48B1B;
