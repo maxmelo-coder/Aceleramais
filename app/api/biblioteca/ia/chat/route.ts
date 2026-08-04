@@ -4,6 +4,7 @@ import { runAI, logAIUsage } from '@/lib/library/ai';
 import type { AIRequest } from '@/lib/library/ai';
 
 export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
