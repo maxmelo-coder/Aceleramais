@@ -89,8 +89,7 @@ export function CreateMunicipalityForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3 rounded-bib-md transition-colors text-sm disabled:opacity-60"
-        style={{ background: 'linear-gradient(135deg, #FE6509, #FF8A3D)' }}
+        className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3 rounded-bib-md bg-bib-orange transition-colors text-sm disabled:opacity-60"
       >
         {pending && <Loader2 size={16} className="animate-spin" />}
         {pending ? 'Criando...' : 'Criar login'}

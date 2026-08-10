@@ -85,7 +85,7 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-bib-md text-sm font-semibold text-white shadow-sm hover:shadow-bib-glass transition-shadow"
-                style={{ background: `linear-gradient(135deg, ${accent}, ${accent}CC)` }}
+                style={{ backgroundColor: accent }}
               >
                 Abrir conteúdo
                 <ExternalLink size={15} aria-hidden="true" />
@@ -94,7 +94,7 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
               <Link
                 href={`/biblioteca/livro/${book.id}/ler`}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-bib-md text-sm font-semibold text-white shadow-sm hover:shadow-bib-glass transition-shadow"
-                style={{ background: `linear-gradient(135deg, ${accent}, ${accent}CC)` }}
+                style={{ backgroundColor: accent }}
               >
                 Ler agora
               </Link>

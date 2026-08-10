@@ -285,10 +285,7 @@ export function AutismoTabs() {
               {tab.icon}
               {tab.label}
               {active === tab.id && (
-                <span
-                  className="absolute left-4 right-4 -bottom-px h-[2px] rounded-full"
-                  style={{ background: 'linear-gradient(90deg, #009CA4, #13A4CC)' }}
-                />
+                <span className="absolute left-4 right-4 -bottom-px h-[2px] rounded-full bg-bib-teal" />
               )}
             </button>
           ))}

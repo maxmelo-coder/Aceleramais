@@ -188,7 +188,7 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
         Pular para o conteúdo
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-bib-border-light backdrop-blur-bib-md bg-bib-glass-light">
+      <header className="sticky top-0 z-30 border-b border-bib-border-light bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -248,8 +248,7 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
 
             <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-bib-border-light">
               <span
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
-                style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-bib-teal shrink-0"
                 aria-hidden="true"
               >
                 {initial}
@@ -293,8 +292,7 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
                       <motion.span
                         layoutId="library-nav-active"
                         aria-hidden="true"
-                        className="absolute left-3 right-3 -bottom-px h-[2px] rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #009CA4, #13A4CC)' }}
+                        className="absolute left-3 right-3 -bottom-px h-[2px] rounded-full bg-bib-teal"
                         transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
                       />
                     )}
@@ -343,8 +341,7 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
               </div>
               <div className="flex items-center gap-2.5 px-5 py-4 border-b border-bib-border-light">
                 <span
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-bib-teal shrink-0"
                   aria-hidden="true"
                 >
                   {initial}

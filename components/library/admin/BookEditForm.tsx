@@ -120,8 +120,7 @@ export function BookEditForm({ book, programs }: { book: Book; programs: Program
           value="true"
           disabled={pending || (book.total_pages === 0 && !book.external_url)}
           onClick={() => setPendingPublish(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-bib-md text-sm font-semibold text-white transition-colors disabled:opacity-60"
-          style={{ background: 'linear-gradient(135deg, #FE6509, #FF8A3D)' }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-bib-md text-sm font-semibold text-white bg-bib-orange transition-colors disabled:opacity-60"
         >
           {pending && pendingPublish && <Loader2 size={14} className="animate-spin" />}
           {pending && pendingPublish ? 'Publicando...' : book.status === 'published' ? 'Republicar' : 'Publicar'}

@@ -34,14 +34,6 @@ function Book3D() {
     mouseY.set(0);
   }
 
-  // Cópias desfocadas atrás do ícone real, para simular profundidade/glow
-  // 3D sem depender de um motor 3D — só CSS transform + blur em camadas.
-  const echoLayers = [
-    { z: -70, scale: 1.12, opacity: 0.18, blur: 22 },
-    { z: -40, scale: 1.07, opacity: 0.28, blur: 10 },
-    { z: -18, scale: 1.03, opacity: 0.4, blur: 3 },
-  ];
-
   return (
     <div
       className="relative w-full h-full flex items-center justify-center"
@@ -49,31 +41,9 @@ function Book3D() {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Glows de fundo */}
+      {/* Sombra de apoio — dá "chão" ao ícone flutuante */}
       <div
-        className="absolute w-[420px] h-[420px] rounded-full opacity-40 blur-bib-lg"
-        style={{ background: 'radial-gradient(circle, #7957FF, transparent 70%)' }}
-      />
-      <div
-        className="absolute w-[320px] h-[320px] rounded-full opacity-30 blur-bib-lg translate-x-24 translate-y-16"
-        style={{ background: 'radial-gradient(circle, #009CA4, transparent 70%)' }}
-      />
-
-      {/* Partículas flutuantes */}
-      {!reducedMotion &&
-        Array.from({ length: 10 }).map((_, i) => (
-          <motion.span
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-white/60"
-            style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 100}%` }}
-            animate={{ y: [0, -16, 0], opacity: [0.2, 0.8, 0.2] }}
-            transition={{ duration: 4 + (i % 4), repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
-          />
-        ))}
-
-      {/* Pedestal de vidro — dá "chão" ao ícone flutuante */}
-      <div
-        className="absolute w-56 h-10 rounded-full bg-white/10 blur-bib-md"
+        className="absolute w-56 h-10 rounded-full bg-black/30"
         style={{ transform: 'translateY(150px) rotateX(70deg)' }}
       />
 
@@ -87,19 +57,6 @@ function Book3D() {
         }}
         className="relative w-56 h-56 flex items-center justify-center"
       >
-        {echoLayers.map((layer, i) => (
-          <div
-            key={i}
-            className="absolute inset-0"
-            style={{
-              transform: `translateZ(${layer.z}px) scale(${layer.scale})`,
-              opacity: layer.opacity,
-              filter: `blur(${layer.blur}px)`,
-            }}
-          >
-            <Image src="/brand/logo-icon.png" alt="" fill sizes="224px" style={{ objectFit: 'contain' }} />
-          </div>
-        ))}
         <div className="relative w-full h-full drop-shadow-[0_20px_45px_rgba(0,0,0,0.45)]" style={{ transform: 'translateZ(10px)' }}>
           <Image src="/brand/logo-icon.png" alt="Eleva+" fill sizes="224px" priority style={{ objectFit: 'contain' }} />
         </div>
@@ -155,8 +112,7 @@ export default function AdminLoginPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-5xl mx-4 grid md:grid-cols-2 rounded-bib-xl overflow-hidden shadow-bib-glass border border-bib-border-dark"
-            style={{ background: 'linear-gradient(160deg, #0B1F35, #071426)' }}
+            className="relative w-full max-w-5xl mx-4 grid md:grid-cols-2 rounded-bib-xl overflow-hidden shadow-bib-glass border border-bib-border-dark bg-bib-surface-dark"
           >
             {/* Painel visual 3D — oculto em telas pequenas */}
             <div className="hidden md:block relative h-[560px]" style={{ background: '#040D1A' }}>
@@ -288,8 +244,7 @@ export default function AdminLoginPage() {
                   disabled={pending || state.success}
                   whileHover={reducedMotion ? undefined : { scale: 1.01 }}
                   whileTap={reducedMotion ? undefined : { scale: 0.99 }}
-                  className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3 rounded-bib-md transition-colors text-sm shadow-bib-glow-teal disabled:opacity-70"
-                  style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+                  className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3 rounded-bib-md transition-colors text-sm bg-bib-teal shadow-bib-md disabled:opacity-70"
                 >
                   {pending || state.success ? (
                     <>

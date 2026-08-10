@@ -81,8 +81,7 @@ export function ChatInterface({ mode, placeholder = 'Escreva sua pergunta aqui..
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
               <div
-                className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+                className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white bg-bib-teal text-xs font-bold"
                 aria-hidden="true"
               >
                 IA
@@ -123,10 +122,7 @@ export function ChatInterface({ mode, placeholder = 'Escreva sua pergunta aqui..
         ))}
         {loading && (
           <div className="flex gap-3 justify-start">
-            <div
-              className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold"
-              style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
-            >
+            <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white bg-bib-teal text-xs font-bold">
               IA
             </div>
             <div className="bg-white border border-bib-border-light rounded-bib-md px-4 py-3 shadow-sm">
@@ -164,8 +160,7 @@ export function ChatInterface({ mode, placeholder = 'Escreva sua pergunta aqui..
             type="button"
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-bib-sm text-sm font-medium text-white transition-opacity disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-bib-sm text-sm font-medium text-white bg-bib-teal transition-opacity disabled:opacity-40"
           >
             {loading ? 'Aguarde…' : 'Enviar'}
           </button>

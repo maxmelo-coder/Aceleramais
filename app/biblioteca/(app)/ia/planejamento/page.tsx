@@ -58,8 +58,7 @@ Por favor, crie um plano de aula completo, alinhado à BNCC, com: contexto, obje
       <div className="max-w-3xl">
         <div className="flex items-center gap-3 mb-6">
           <div
-            className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-            style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+            className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white bg-bib-teal shrink-0"
             aria-hidden="true"
           >
             <Calendar size={20} />
@@ -96,8 +95,7 @@ Por favor, crie um plano de aula completo, alinhado à BNCC, com: contexto, obje
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
         <div
-          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-          style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white bg-bib-teal shrink-0"
           aria-hidden="true"
         >
           <Calendar size={20} />
@@ -203,8 +201,7 @@ Por favor, crie um plano de aula completo, alinhado à BNCC, com: contexto, obje
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-bib-sm text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-bib-sm text-sm font-semibold text-white bg-bib-teal transition-opacity hover:opacity-90"
           >
             Gerar plano de aula
             <ArrowRight size={16} aria-hidden="true" />

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Heart, Play, ChevronDown, Sparkles, ArrowRight, BookOpen, Users, Shield, ClipboardList, MessageCircle, Star, Eye, Lightbulb } from 'lucide-react';
+import { Play, Sparkles, ArrowRight, BookOpen, Users, Shield, ClipboardList, MessageCircle, Star, Eye, Lightbulb, Heart } from 'lucide-react';
 import { AccordionItem } from './AccordionItem';
 
 export const metadata = {
@@ -198,15 +198,7 @@ export default function EducarParaCuidarPage() {
   return (
     <div className="space-y-12">
       {/* Hero */}
-      <section
-        className="relative overflow-hidden rounded-bib-xl px-6 py-10 sm:px-10 sm:py-12"
-        style={{ background: 'linear-gradient(135deg, #072441, #0B3560 60%, #072441)' }}
-      >
-        <Heart
-          size={200}
-          aria-hidden="true"
-          className="absolute -right-8 -top-8 text-white/[0.05] pointer-events-none"
-        />
+      <section className="relative overflow-hidden rounded-bib-xl px-6 py-10 sm:px-10 sm:py-12 bg-bib-navy">
         <span className="relative inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/70">
           <BookOpen size={12} aria-hidden="true" />
           Formação de Educadores
@@ -298,8 +290,7 @@ export default function EducarParaCuidarPage() {
       >
         <div className="flex items-start gap-4">
           <div
-            className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-            style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+            className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white bg-bib-teal shrink-0"
             aria-hidden="true"
           >
             <Sparkles size={20} />

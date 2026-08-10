@@ -60,16 +60,6 @@ function LivingLibraryScene() {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Glows institucionais de fundo */}
-      <div
-        className="absolute w-[440px] h-[440px] rounded-full opacity-30 blur-bib-lg"
-        style={{ background: 'radial-gradient(circle, #13A4CC, transparent 70%)' }}
-      />
-      <div
-        className="absolute w-[300px] h-[300px] rounded-full opacity-25 blur-bib-lg -translate-x-28 translate-y-20"
-        style={{ background: 'radial-gradient(circle, #009CA4, transparent 70%)' }}
-      />
-
       {/* Rede de municípios — pontos luminosos conectados ao livro central */}
       <svg
         className="absolute inset-0 w-full h-full"
@@ -103,9 +93,9 @@ function LivingLibraryScene() {
         ))}
       </svg>
 
-      {/* Pedestal de vidro — dá "chão" ao livro flutuante */}
+      {/* Sombra de apoio — dá "chão" ao livro flutuante */}
       <div
-        className="absolute w-64 h-10 rounded-full bg-white/10 blur-bib-md"
+        className="absolute w-64 h-10 rounded-full bg-black/20"
         style={{ transform: 'translateY(120px) rotateX(70deg)' }}
       />
 
@@ -130,12 +120,6 @@ function LivingLibraryScene() {
             className="select-none w-full h-full object-contain"
           />
         </div>
-
-        {/* Brilho suave subindo da marca — "conhecimento" */}
-        <div
-          className="absolute left-1/2 bottom-full -translate-x-1/2 w-24 h-24 rounded-full opacity-50 blur-bib-md pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(96,199,222,0.5), transparent 70%)' }}
-        />
       </motion.div>
 
       <span
@@ -191,10 +175,7 @@ export default function MunicipalityLoginPage() {
             className="relative w-full max-w-5xl grid md:grid-cols-2 rounded-bib-xl overflow-hidden shadow-bib-glass border border-bib-border-light"
           >
             {/* Painel institucional e visual — oculto em telas pequenas */}
-            <div
-              className="hidden md:flex flex-col justify-between h-[600px] p-10 relative"
-              style={{ background: 'linear-gradient(160deg, #0B2E52, #072441 55%, #0B1F35)' }}
-            >
+            <div className="hidden md:flex flex-col justify-between h-[600px] p-10 relative bg-bib-navy">
               <div className="relative z-10">
                 <ElevaWordmark variant="dark" size="md" />
                 <span className="mt-6 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-bib-glass-dark border border-bib-border-dark text-bib-text-dark-secondary">
@@ -339,8 +320,7 @@ export default function MunicipalityLoginPage() {
                   disabled={pending || state.success}
                   whileHover={reducedMotion ? undefined : { scale: 1.01 }}
                   whileTap={reducedMotion ? undefined : { scale: 0.99 }}
-                  className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3 rounded-bib-md transition-colors text-sm shadow-bib-glow-teal disabled:opacity-70"
-                  style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+                  className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3 rounded-bib-md transition-colors text-sm bg-bib-teal shadow-bib-md disabled:opacity-70"
                 >
                   {pending || state.success ? (
                     <>

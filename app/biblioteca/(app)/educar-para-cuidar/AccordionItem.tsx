@@ -23,8 +23,7 @@ export function AccordionItem({ id, icon, title, content }: AccordionItemProps) 
         className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-bib-gray-bg/50 transition-colors"
       >
         <span
-          className="w-8 h-8 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-          style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+          className="w-8 h-8 rounded-bib-sm flex items-center justify-center text-white bg-bib-teal shrink-0"
           aria-hidden="true"
         >
           {icon}

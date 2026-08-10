@@ -25,7 +25,7 @@ export function ModeCard({ href, icon, title, description, color = '#009CA4', ba
       )}
       <div
         className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-        style={{ background: `linear-gradient(135deg, ${color}, ${color}CC)` }}
+        style={{ backgroundColor: color }}
       >
         {icon}
       </div>

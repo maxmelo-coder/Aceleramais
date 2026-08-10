@@ -29,8 +29,7 @@ export default function SocioemocionalPage() {
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
         <div
-          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-          style={{ background: 'linear-gradient(135deg, #FE6509, #FE6509CC)' }}
+          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white bg-bib-orange shrink-0"
           aria-hidden="true"
         >
           <Heart size={20} />

@@ -83,8 +83,7 @@ export function AdminShell({ navItems, userEmail, logoutAction, children }: Admi
                 <motion.span
                   layoutId="admin-nav-active"
                   aria-hidden="true"
-                  className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full"
-                  style={{ background: 'linear-gradient(180deg, #009CA4, #13A4CC)' }}
+                  className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-bib-teal"
                   transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
                 />
               )}
@@ -127,10 +126,7 @@ export function AdminShell({ navItems, userEmail, logoutAction, children }: Admi
       </a>
 
       {/* Sidebar — desktop */}
-      <aside
-        className="hidden md:flex w-60 shrink-0 flex-col"
-        style={{ background: 'linear-gradient(180deg, #072441, #051a30)' }}
-      >
+      <aside className="hidden md:flex w-60 shrink-0 flex-col bg-bib-navy">
         {sidebarContent}
       </aside>
 
@@ -154,8 +150,7 @@ export function AdminShell({ navItems, userEmail, logoutAction, children }: Admi
               animate={reducedMotion ? { opacity: 1 } : { x: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { x: -280 }}
               transition={{ duration: reducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-y-0 left-0 w-64 flex flex-col"
-              style={{ background: 'linear-gradient(180deg, #072441, #051a30)' }}
+              className="absolute inset-y-0 left-0 w-64 flex flex-col bg-bib-navy"
             >
               <button
                 type="button"
@@ -173,7 +168,7 @@ export function AdminShell({ navItems, userEmail, logoutAction, children }: Admi
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 sm:px-8 h-16 border-b border-bib-border-light backdrop-blur-bib-md bg-bib-glass-light">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 sm:px-8 h-16 border-b border-bib-border-light bg-white">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
@@ -210,10 +205,7 @@ export function AdminShell({ navItems, userEmail, logoutAction, children }: Admi
             </button>
             {userEmail && (
               <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-bib-border-light">
-                <span
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
-                >
+                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-bib-teal shrink-0">
                   {userEmail.charAt(0).toUpperCase()}
                 </span>
                 <span className="text-xs text-bib-text-light-secondary max-w-[160px] truncate">{userEmail}</span>

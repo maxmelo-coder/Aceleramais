@@ -27,8 +27,7 @@ export default function EstudoDeCasoPage() {
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
         <div
-          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-          style={{ background: 'linear-gradient(135deg, #13A4CC, #009CA4)' }}
+          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white bg-bib-blue shrink-0"
           aria-hidden="true"
         >
           <Search size={20} />

@@ -2,8 +2,16 @@
  * Design tokens — Biblioteca Digital Eleva+ (área administrativa).
  * Namespace "bib" para não colidir com os tokens "el-*" do app principal
  * (app/globals.css). Mantém a paleta oficial ELEVA_BRAND (lib/library/brand.ts)
- * como base e adiciona superfícies "glass" + acentos escassos para a
- * direção visual "Apple Vision Library".
+ * como base.
+ *
+ * Direção visual (v2, polimento): editorial, restrita, contida — hierarquia,
+ * tipografia, proporção e espaçamento fazem o trabalho, não efeitos
+ * decorativos. Tokens de "glass"/glow/blur pesado foram removidos de
+ * propósito (v1 usava uma estética "Apple Vision Library" com vidro, brilho
+ * e desfoque que hoje lemos como genérica/"gerada por IA" — ver brief v2.0).
+ * Os nomes de token com "glass"/"dark"/"light" foram mantidos por
+ * compatibilidade (evita reescrever toda referência), mas agora resolvem
+ * para superfícies sólidas e sombras discretas.
  */
 
 @theme inline {
@@ -15,46 +23,47 @@
   --color-bib-white: #FFFFFF;
   --color-bib-gray-bg: #F5F7FA;
 
-  /* Acentos premium — uso esparso (destaques, glow, ícones de estado). */
-  --color-bib-violet: #7957FF;
+  /* Acento pontual — uso raro (ex.: badge de capa ausente). */
   --color-bib-gold: #D4AF7A;
 
-  /* Superfícies "glass" escuras (login, painéis sobre fundo navy). */
+  /* Superfícies escuras (login, painéis sobre fundo navy) — sólidas, sem
+     transparência/blur; "glass" no nome é só histórico do token. */
   --color-bib-surface-dark: #0B1F35;
   --color-bib-surface-dark-2: #0F2A47;
-  --color-bib-glass-dark: rgb(255 255 255 / 6%);
-  --color-bib-glass-dark-strong: rgb(255 255 255 / 10%);
-  --color-bib-border-dark: rgb(255 255 255 / 12%);
-  --color-bib-border-dark-strong: rgb(255 255 255 / 20%);
+  --color-bib-glass-dark: rgb(255 255 255 / 8%);
+  --color-bib-glass-dark-strong: rgb(255 255 255 / 12%);
+  --color-bib-border-dark: rgb(255 255 255 / 14%);
+  --color-bib-border-dark-strong: rgb(255 255 255 / 24%);
   --color-bib-text-dark-primary: #F5F8FA;
-  --color-bib-text-dark-secondary: rgb(245 248 250 / 64%);
-  --color-bib-text-dark-muted: rgb(245 248 250 / 40%);
+  --color-bib-text-dark-secondary: rgb(245 248 250 / 68%);
+  --color-bib-text-dark-muted: rgb(245 248 250 / 44%);
 
-  /* Superfícies "glass" claras (dashboard, cards no dia a dia). */
+  /* Superfícies claras (dashboard, cards no dia a dia) — sólidas. */
   --color-bib-surface-light: #FFFFFF;
-  --color-bib-glass-light: rgb(255 255 255 / 70%);
-  --color-bib-border-light: rgb(7 36 65 / 8%);
+  --color-bib-glass-light: #FFFFFF;
+  --color-bib-border-light: rgb(7 36 65 / 10%);
   --color-bib-text-light-primary: #0B1F35;
-  --color-bib-text-light-secondary: rgb(7 36 65 / 60%);
-  --color-bib-text-light-muted: rgb(7 36 65 / 38%);
+  --color-bib-text-light-secondary: rgb(7 36 65 / 62%);
+  --color-bib-text-light-muted: rgb(7 36 65 / 42%);
 
-  /* Raios */
-  --radius-bib-sm: 10px;
-  --radius-bib-md: 16px;
-  --radius-bib-lg: 24px;
-  --radius-bib-xl: 32px;
+  /* Raios — escala contida (controles 8px, cards 12px, painéis maiores 16px). */
+  --radius-bib-sm: 8px;
+  --radius-bib-md: 12px;
+  --radius-bib-lg: 16px;
+  --radius-bib-xl: 16px;
 
-  /* Sombras */
-  --shadow-bib-glass: 0 8px 32px rgb(0 0 0 / 24%);
-  --shadow-bib-glow-teal: 0 0 40px rgb(0 156 164 / 35%);
-  --shadow-bib-glow-violet: 0 0 60px rgb(121 87 255 / 25%);
+  /* Sombras — discretas, só para elevação funcional (dropdown, drawer, hover de card). */
+  --shadow-bib-glass: 0 1px 2px rgb(7 36 65 / 6%), 0 8px 24px rgb(7 36 65 / 10%);
+  --shadow-bib-sm: 0 1px 2px rgb(7 36 65 / 6%);
+  --shadow-bib-md: 0 4px 16px rgb(7 36 65 / 8%);
 
-  /* Desfoque */
-  --blur-bib-sm: 8px;
-  --blur-bib-md: 20px;
-  --blur-bib-lg: 40px;
+  /* Desfoque — reservado a overlays funcionais (scrim atrás de modal/drawer),
+     não mais para "blobs" decorativos de fundo. */
+  --blur-bib-sm: 4px;
+  --blur-bib-md: 8px;
+  --blur-bib-lg: 8px;
 
-  /* Easing — curvas suaves estilo visionOS/Linear. */
+  /* Easing */
   --ease-bib-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-bib-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 

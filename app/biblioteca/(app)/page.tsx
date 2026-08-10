@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { BookCard } from '@/components/library/BookCard';
 import { formatRelativeTime } from '@/lib/library/format';
-import { BookOpen, Sparkles, LibraryBig, ArrowRight } from 'lucide-react';
+import { BookOpen, LibraryBig, ArrowRight } from 'lucide-react';
 
 export default async function LibraryHomePage() {
   const supabase = await createClient();
@@ -68,15 +68,7 @@ export default async function LibraryHomePage() {
   return (
     <div className="space-y-12">
       {/* Boas-vindas */}
-      <section
-        className="relative overflow-hidden rounded-bib-xl px-6 py-10 sm:px-10 sm:py-12"
-        style={{ background: 'linear-gradient(135deg, #072441, #0B2E52 60%, #0B1F35)' }}
-      >
-        <Sparkles
-          size={160}
-          aria-hidden="true"
-          className="absolute -right-6 -top-6 text-white/[0.06] rotate-12 pointer-events-none"
-        />
+      <section className="relative overflow-hidden rounded-bib-xl px-6 py-10 sm:px-10 sm:py-12 bg-bib-navy">
         <span className="relative inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-bib-glass-dark border border-bib-border-dark text-bib-text-dark-secondary">
           <LibraryBig size={13} aria-hidden="true" />
           Biblioteca Digital Acelera+
@@ -174,7 +166,7 @@ export default async function LibraryHomePage() {
               >
                 <div
                   className="w-12 h-12 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-                  style={{ background: `linear-gradient(160deg, ${accent}, ${accent}CC)` }}
+                  style={{ backgroundColor: accent }}
                   aria-hidden="true"
                 >
                   <BookOpen size={20} />

@@ -43,7 +43,7 @@ export function BookCard({ id, title, author, coverUrl, accentColor, meta }: Boo
         ) : (
           <div
             className="w-full h-full flex flex-col items-center justify-center gap-2 text-white text-sm font-medium text-center p-3"
-            style={{ background: `linear-gradient(160deg, ${accent}, ${accent}CC)` }}
+            style={{ backgroundColor: accent }}
           >
             <BookOpen size={20} aria-hidden="true" className="opacity-80" />
             {title}

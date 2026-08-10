@@ -41,8 +41,7 @@ export function ResetPasswordButton({ userId }: { userId: string }) {
         type="submit"
         disabled={pending}
         aria-label="Salvar nova senha"
-        className="flex items-center justify-center w-7 h-7 rounded-bib-sm text-white disabled:opacity-60 transition-colors"
-        style={{ background: 'linear-gradient(135deg, #FE6509, #FF8A3D)' }}
+        className="flex items-center justify-center w-7 h-7 rounded-bib-sm text-white bg-bib-orange disabled:opacity-60 transition-colors"
       >
         {pending ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
       </button>

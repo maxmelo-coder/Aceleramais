@@ -41,8 +41,7 @@ export function AIFloatingButton() {
         onClick={() => setExpanded(v => !v)}
         aria-expanded={expanded}
         aria-label={expanded ? 'Fechar menu da IA Eleva+' : 'Abrir IA Eleva+'}
-        className="w-14 h-14 rounded-full text-white shadow-bib-glow-teal flex items-center justify-center transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-bib-teal/50"
-        style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+        className="w-14 h-14 rounded-full text-white bg-bib-teal shadow-bib-md flex items-center justify-center transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-bib-teal/50"
       >
         {expanded ? <X size={22} aria-hidden="true" /> : <Sparkles size={22} aria-hidden="true" />}
       </button>

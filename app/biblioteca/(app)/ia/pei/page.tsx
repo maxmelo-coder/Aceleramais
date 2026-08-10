@@ -36,8 +36,7 @@ export default function PEIPage() {
       <div className="min-w-0">
         <div className="flex items-center gap-3 mb-6">
           <div
-            className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-            style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+            className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white bg-bib-teal shrink-0"
             aria-hidden="true"
           >
             <FileText size={20} />
@@ -85,8 +84,7 @@ export default function PEIPage() {
             {PEI_STAGES.map(stage => (
               <li key={stage.num} className="flex items-start gap-2.5 text-xs text-bib-text-light-muted">
                 <span
-                  className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-                  style={{ background: 'linear-gradient(135deg, #009CA4, #13A4CC)' }}
+                  className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-bib-teal mt-0.5"
                 >
                   {stage.num}
                 </span>

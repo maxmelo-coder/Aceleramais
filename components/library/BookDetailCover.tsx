@@ -34,7 +34,7 @@ export function BookDetailCover({
       ) : (
         <div
           className="w-full h-full flex flex-col items-center justify-center gap-3 text-white text-base font-semibold text-center p-6"
-          style={{ background: `linear-gradient(160deg, ${accentColor}, ${accentColor}CC)` }}
+          style={{ backgroundColor: accentColor }}
         >
           <BookOpen size={28} aria-hidden="true" className="opacity-80" />
           {title}

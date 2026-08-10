@@ -75,7 +75,7 @@ export default async function BookAnalyticsPage({
                 className="flex-1 rounded-t transition-colors"
                 style={{
                   height: `${Math.max(heightPct, count > 0 ? 4 : 1)}%`,
-                  background: count > 0 ? 'linear-gradient(180deg, #13A4CC, #009CA4)' : '#E5E7EB',
+                  background: count > 0 ? '#009CA4' : '#E5E7EB',
                 }}
               />
             );

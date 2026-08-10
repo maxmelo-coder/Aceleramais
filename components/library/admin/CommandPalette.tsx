@@ -125,8 +125,7 @@ export function CommandPalette({ open, onOpenChange, navItems }: CommandPaletteP
             animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-lg rounded-bib-lg border border-bib-border-dark shadow-bib-glass overflow-hidden"
-            style={{ background: 'linear-gradient(160deg, #0F2A47, #071426)' }}
+            className="relative w-full max-w-lg rounded-bib-lg border border-bib-border-dark shadow-bib-glass overflow-hidden bg-bib-surface-dark-2"
           >
             <div className="flex items-center gap-3 px-4 py-3 border-b border-bib-border-dark">
               <Search size={16} className="text-bib-text-dark-muted shrink-0" aria-hidden="true" />
