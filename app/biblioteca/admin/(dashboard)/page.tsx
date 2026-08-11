@@ -101,12 +101,12 @@ export default async function AdminDashboardPage({
     <div className="space-y-6">
       <div>
         <h1
-          className="text-2xl font-bold text-bib-text-light-primary"
+          className="text-bib-h1 font-bold text-bib-text-light-primary"
           style={{ fontFamily: 'var(--font-bib-display)' }}
         >
           Dashboard de Analytics
         </h1>
-        <p className="mt-1 text-sm text-bib-text-light-secondary">Acessos por livro e por município.</p>
+        <p className="mt-1 text-bib-caption text-bib-text-light-secondary">Acessos por livro e por município.</p>
       </div>
 
       <AdminStatCards stats={stats} />

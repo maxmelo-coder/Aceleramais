@@ -29,8 +29,7 @@ export default function PercursoLetivoPage() {
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
         <div
-          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-          style={{ backgroundColor: '#7957FF' }}
+          className="w-10 h-10 rounded-bib-sm flex items-center justify-center text-white bg-bib-teal shrink-0"
           aria-hidden="true"
         >
           <Layers size={20} />

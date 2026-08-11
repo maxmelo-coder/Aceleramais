@@ -39,12 +39,12 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         <div className="w-3 h-10 rounded-full shrink-0" style={{ backgroundColor: accent }} aria-hidden="true" />
         <div>
           <h1
-            className="text-2xl font-bold text-bib-text-light-primary"
+            className="text-bib-h1 font-bold text-bib-text-light-primary"
             style={{ fontFamily: 'var(--font-bib-display)' }}
           >
             {program.name}
           </h1>
-          {program.description && <p className="text-sm text-bib-text-light-muted">{program.description}</p>}
+          {program.description && <p className="text-bib-caption text-bib-text-light-muted">{program.description}</p>}
         </div>
       </div>
 

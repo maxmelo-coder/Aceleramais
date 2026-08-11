@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { BookCard } from '@/components/library/BookCard';
 import { formatRelativeTime } from '@/lib/library/format';
-import { BookOpen, LibraryBig, ArrowRight } from 'lucide-react';
+import { BookOpen, ArrowRight } from 'lucide-react';
 
 export default async function LibraryHomePage() {
   const supabase = await createClient();
@@ -67,36 +67,31 @@ export default async function LibraryHomePage() {
 
   return (
     <div className="space-y-12">
-      {/* Boas-vindas */}
-      <section className="relative overflow-hidden rounded-bib-xl px-6 py-10 sm:px-10 sm:py-12 bg-bib-navy">
-        <span className="relative inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-bib-glass-dark border border-bib-border-dark text-bib-text-dark-secondary">
-          <LibraryBig size={13} aria-hidden="true" />
+      {/* Boas-vindas — header compacto e editorial, sem hero navy oversized. */}
+      <header className="pb-6 border-b border-bib-border-light">
+        <p className="text-bib-micro font-semibold uppercase tracking-bib-wide text-bib-teal">
           Biblioteca Digital Acelera+
-        </span>
+        </p>
         <h1
-          className="relative mt-4 text-2xl sm:text-3xl font-bold text-bib-text-dark-primary max-w-lg"
+          className="mt-1.5 text-bib-display font-bold text-bib-text-light-primary"
           style={{ fontFamily: 'var(--font-bib-display)' }}
         >
           Olá, {greetingName}
         </h1>
-        <p className="relative mt-2 text-sm text-bib-text-dark-secondary max-w-md">
+        <p className="mt-2 text-bib-body text-bib-text-light-secondary max-w-md">
           Bem-vindo ao acervo digital disponibilizado para a sua rede municipal de educação.
         </p>
-        <div className="relative mt-6 flex flex-wrap gap-2">
-          <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-bib-glass-dark border border-bib-border-dark text-bib-text-dark-secondary">
-            {totalPrograms} {totalPrograms === 1 ? 'programa' : 'programas'}
-          </span>
-          <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-bib-glass-dark border border-bib-border-dark text-bib-text-dark-secondary">
-            {totalBooks} {totalBooks === 1 ? 'livro disponível' : 'livros disponíveis'}
-          </span>
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-bib-micro text-bib-text-light-muted">
+          <span>{totalPrograms} {totalPrograms === 1 ? 'programa' : 'programas'}</span>
+          <span>{totalBooks} {totalBooks === 1 ? 'livro disponível' : 'livros disponíveis'}</span>
         </div>
-      </section>
+      </header>
 
       {/* Continuar leitura — só aparece com histórico real de leitura */}
       {continueReading.length > 0 && (
         <section>
           <h2
-            className="text-lg font-bold text-bib-text-light-primary"
+            className="text-bib-h2 font-bold text-bib-text-light-primary"
             style={{ fontFamily: 'var(--font-bib-display)' }}
           >
             Continuar leitura
@@ -121,7 +116,7 @@ export default async function LibraryHomePage() {
       {newest.length > 0 && (
         <section>
           <h2
-            className="text-lg font-bold text-bib-text-light-primary"
+            className="text-bib-h2 font-bold text-bib-text-light-primary"
             style={{ fontFamily: 'var(--font-bib-display)' }}
           >
             Novidades
@@ -145,12 +140,12 @@ export default async function LibraryHomePage() {
       {/* Explorar por programa */}
       <section>
         <h2
-          className="text-lg font-bold text-bib-text-light-primary"
+          className="text-bib-h2 font-bold text-bib-text-light-primary"
           style={{ fontFamily: 'var(--font-bib-display)' }}
         >
           Explorar por programa
         </h2>
-        <p className="mt-1 text-sm text-bib-text-light-muted">
+        <p className="mt-1 text-bib-caption text-bib-text-light-muted">
           Selecione uma prateleira para ver os livros disponíveis.
         </p>
 
@@ -172,15 +167,15 @@ export default async function LibraryHomePage() {
                   <BookOpen size={20} />
                 </div>
                 <h3
-                  className="mt-4 font-bold text-bib-text-light-primary group-hover:underline"
+                  className="mt-4 text-bib-h3 font-bold text-bib-text-light-primary group-hover:underline"
                   style={{ fontFamily: 'var(--font-bib-display)' }}
                 >
                   {program.name}
                 </h3>
                 {program.description && (
-                  <p className="mt-1 text-sm text-bib-text-light-muted line-clamp-2">{program.description}</p>
+                  <p className="mt-1 text-bib-caption text-bib-text-light-muted line-clamp-2">{program.description}</p>
                 )}
-                <p className="mt-4 flex items-center gap-1 text-xs font-medium text-bib-text-light-muted">
+                <p className="mt-4 flex items-center gap-1 text-bib-micro font-medium text-bib-text-light-muted">
                   {count} {count === 1 ? 'livro disponível' : 'livros disponíveis'}
                   <ArrowRight
                     size={12}

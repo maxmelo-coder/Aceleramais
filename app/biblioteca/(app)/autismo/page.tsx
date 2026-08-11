@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Sparkles, ArrowRight, BookOpen, CheckCircle } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
 import { AutismoTabs } from './AutismoTabs';
 
 export const metadata = {
@@ -10,30 +10,28 @@ export const metadata = {
 export default function AutismoPage() {
   return (
     <div className="space-y-10">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-bib-xl px-6 py-10 sm:px-10 sm:py-12 bg-bib-navy">
-        <span className="relative inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/70">
-          <BookOpen size={12} aria-hidden="true" />
+      {/* Header — mesmo padrão editorial das demais páginas do hub (eyebrow +
+          título + descrição), sem bloco navy de hero. */}
+      <header className="pb-6 border-b border-bib-border-light">
+        <p className="text-bib-micro font-semibold uppercase tracking-bib-wide text-bib-teal">
           Educação Inclusiva
-        </span>
+        </p>
         <h1
-          className="relative mt-4 text-2xl sm:text-3xl font-bold text-white max-w-lg"
+          className="mt-1.5 text-bib-display font-bold text-bib-text-light-primary"
           style={{ fontFamily: 'var(--font-bib-display)' }}
         >
           Autismo e Neurodiversidade
         </h1>
-        <p className="relative mt-2 text-sm text-white/70 max-w-xl">
+        <p className="mt-2 text-bib-body text-bib-text-light-secondary max-w-xl">
           Formação baseada em evidências para apoiar educadores a incluir, com qualidade,
           estudantes autistas e neurodivergentes. Abordagem centrada nas potencialidades.
         </p>
-        <div className="relative mt-5 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-bib-micro text-bib-text-light-muted">
           {['Lei 12.764/2012', 'LBI — Lei 13.146/2015', 'Abordagem centrada na pessoa', 'Sem práticas coercitivas'].map(tag => (
-            <span key={tag} className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-white/70">
-              {tag}
-            </span>
+            <span key={tag}>{tag}</span>
           ))}
         </div>
-      </section>
+      </header>
 
       {/* Princípios */}
       <section className="bg-white rounded-bib-md border border-bib-border-light p-6 shadow-sm">

@@ -10,12 +10,6 @@ const ICONS: Record<StatCardData['key'], LucideIcon> = {
   municipality: Building2,
 };
 
-const ACCENTS: Record<StatCardData['key'], string> = {
-  book: '#009CA4',
-  access: '#7957FF',
-  municipality: '#FE6509',
-};
-
 export interface StatCardData {
   key: 'book' | 'access' | 'municipality';
   label: string;
@@ -53,10 +47,7 @@ export function AdminStatCards({ stats }: { stats: StatCardData[] }) {
             className="rounded-bib-lg border border-bib-border-light bg-white p-5"
           >
             <div className="flex items-center gap-3">
-              <span
-                className="w-9 h-9 rounded-bib-sm flex items-center justify-center text-white shrink-0"
-                style={{ backgroundColor: ACCENTS[stat.key] }}
-              >
+              <span className="w-9 h-9 rounded-bib-sm flex items-center justify-center shrink-0 bg-bib-teal/10 text-bib-teal">
                 <Icon size={16} aria-hidden="true" />
               </span>
               <p className="text-xs font-medium text-bib-text-light-muted uppercase tracking-wide">{stat.label}</p>

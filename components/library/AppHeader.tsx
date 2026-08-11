@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Menu, X, LogOut, BookOpen } from 'lucide-react';
+import { Search, Menu, X, LogOut, BookOpen, ChevronDown, Sparkles } from 'lucide-react';
 import { ElevaWordmark } from '@/components/library/ElevaWordmark';
 import { usePrefersReducedMotion } from '@/lib/library/use-prefers-reduced-motion';
 import { useFocusTrap } from '@/lib/library/use-focus-trap';
@@ -40,11 +40,13 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<BookSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const searchOverlayRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
 
   // Prende o foco de teclado dentro do painel aberto (drawer mobile ou busca
   // em tela cheia) — Tab não escapa para o conteúdo por trás.
@@ -56,7 +58,26 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
     setSearchOpen(false);
     setQuery('');
     setResults(null);
+    setOpenDropdown(null);
   }, [pathname]);
+
+  // Fecha o dropdown de navegação (Biblioteca/Recursos) ao clicar fora ou
+  // pressionar Esc — mesmo padrão usado no dropdown de busca.
+  useEffect(() => {
+    if (!openDropdown) return;
+    function onClick(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenDropdown(null);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpenDropdown(null);
+    }
+    document.addEventListener('mousedown', onClick);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [openDropdown]);
 
   // Ao abrir o menu mobile, move o foco para o botão de fechar (primeiro
   // elemento focável do painel), como em qualquer diálogo modal acessível.
@@ -123,13 +144,57 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
 
   const initial = (municipalityName || 'M').charAt(0).toUpperCase();
 
-  const navLinks = [
-    { href: '/biblioteca', label: 'Início' },
-    ...programs.map(p => ({ href: `/biblioteca/programa/${p.slug}`, label: p.name })),
-    { href: '/biblioteca/ia', label: '✦ IA Eleva+' },
-    { href: '/biblioteca/educar-para-cuidar', label: 'Educar para Cuidar' },
-    { href: '/biblioteca/autismo', label: 'Autismo' },
+  // Navegação primária — arquitetura escalável: só 3-4 itens fixos no nível
+  // superior. Programas (que crescem em número com o tempo) e páginas de
+  // recurso ficam agrupados em dropdowns contextuais, em vez de uma faixa
+  // horizontal com scroll que cresce sem limite a cada programa cadastrado.
+  type NavItem =
+    | { type: 'link'; key: string; href: string; label: string }
+    | { type: 'dropdown'; key: string; label: string; items: { href: string; label: string }[] };
+
+  const primaryNav: NavItem[] = [
+    { type: 'link', key: 'inicio', href: '/biblioteca', label: 'Início' },
+    ...(programs.length > 0
+      ? ([
+          {
+            type: 'dropdown',
+            key: 'biblioteca',
+            label: 'Biblioteca',
+            items: programs.map(p => ({ href: `/biblioteca/programa/${p.slug}`, label: p.name })),
+          },
+        ] as NavItem[])
+      : []),
+    { type: 'link', key: 'ia', href: '/biblioteca/ia', label: 'IA Eleva+' },
+    {
+      type: 'dropdown',
+      key: 'recursos',
+      label: 'Recursos',
+      items: [
+        { href: '/biblioteca/educar-para-cuidar', label: 'Educar para Cuidar' },
+        { href: '/biblioteca/autismo', label: 'Apoio ao Autismo' },
+      ],
+    },
   ];
+
+  // Versão plana (com cabeçalhos de grupo) usada no drawer mobile, onde uma
+  // lista vertical única é mais natural do que dropdowns aninhados.
+  const mobileGroups: { heading: string | null; items: { href: string; label: string }[] }[] = [
+    { heading: null, items: [{ href: '/biblioteca', label: 'Início' }, { href: '/biblioteca/ia', label: 'IA Eleva+' }] },
+    ...(programs.length > 0
+      ? [{ heading: 'Biblioteca', items: programs.map(p => ({ href: `/biblioteca/programa/${p.slug}`, label: p.name })) }]
+      : []),
+    {
+      heading: 'Recursos',
+      items: [
+        { href: '/biblioteca/educar-para-cuidar', label: 'Educar para Cuidar' },
+        { href: '/biblioteca/autismo', label: 'Apoio ao Autismo' },
+      ],
+    },
+  ];
+
+  function isLinkActive(href: string) {
+    return href === '/biblioteca' ? pathname === href : pathname?.startsWith(href);
+  }
 
   const searchResultsPanel = (
     <>
@@ -238,10 +303,7 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
             </button>
 
             {isAdmin && (
-              <span
-                className="hidden sm:inline-flex text-xs font-medium px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: '#FE650920', color: '#FE6509' }}
-              >
+              <span className="hidden sm:inline-flex text-xs font-medium px-2.5 py-1 rounded-full bg-bib-orange/10 text-bib-orange">
                 Modo preview (admin)
               </span>
             )}
@@ -270,24 +332,29 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
           </div>
         </div>
 
-        {/* Navegação — desktop, faixa de programas reais (funcionam como "coleções") */}
-        {navLinks.length > 1 && (
-          <nav
-            aria-label="Navegação principal"
-            className="hidden md:block border-t border-bib-border-light"
-          >
-            <div className="max-w-6xl mx-auto px-6 flex items-center gap-1 overflow-x-auto">
-              {navLinks.map(link => {
-                const isActive = link.href === '/biblioteca' ? pathname === link.href : pathname?.startsWith(link.href);
+        {/* Navegação — desktop. Arquitetura enxuta: itens fixos (Início, IA
+            Eleva+) + dropdowns contextuais (Biblioteca, Recursos) no lugar da
+            antiga faixa horizontal com scroll que crescia a cada programa. */}
+        <nav ref={navRef} aria-label="Navegação principal" className="hidden md:block border-t border-bib-border-light">
+          <div className="max-w-6xl mx-auto px-6 flex items-center gap-1">
+            {primaryNav.map(item => {
+              if (item.type === 'link') {
+                const isActive = isLinkActive(item.href);
                 return (
                   <Link
-                    key={link.href}
-                    href={link.href}
+                    key={item.key}
+                    href={item.href}
                     aria-current={isActive ? 'page' : undefined}
-                    className="relative px-3 py-2.5 text-sm whitespace-nowrap transition-colors"
-                    style={{ color: isActive ? '#072441' : 'rgb(7 36 65 / 56%)' }}
+                    className={`relative px-3 py-2.5 text-bib-body font-medium whitespace-nowrap transition-colors ${
+                      isActive
+                        ? 'text-bib-text-light-primary'
+                        : 'text-bib-text-light-secondary hover:text-bib-text-light-primary'
+                    }`}
                   >
-                    {link.label}
+                    {item.key === 'ia' && (
+                      <Sparkles size={13} aria-hidden="true" className="inline mr-1.5 -mt-0.5 text-bib-teal" />
+                    )}
+                    {item.label}
                     {isActive && (
                       <motion.span
                         layoutId="library-nav-active"
@@ -298,10 +365,68 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
                     )}
                   </Link>
                 );
-              })}
-            </div>
-          </nav>
-        )}
+              }
+
+              const isOpen = openDropdown === item.key;
+              const isGroupActive = item.items.some(sub => isLinkActive(sub.href));
+              return (
+                <div key={item.key} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setOpenDropdown(isOpen ? null : item.key)}
+                    aria-expanded={isOpen}
+                    aria-haspopup="true"
+                    className={`relative flex items-center gap-1 px-3 py-2.5 text-bib-body font-medium whitespace-nowrap transition-colors ${
+                      isGroupActive || isOpen
+                        ? 'text-bib-text-light-primary'
+                        : 'text-bib-text-light-secondary hover:text-bib-text-light-primary'
+                    }`}
+                  >
+                    {item.label}
+                    <ChevronDown
+                      size={13}
+                      aria-hidden="true"
+                      className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                    {isGroupActive && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-3 right-3 -bottom-px h-[2px] rounded-full bg-bib-teal"
+                      />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                        animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                        exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                        transition={{ duration: reducedMotion ? 0 : 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute z-40 mt-1 left-0 min-w-56 rounded-bib-md border border-bib-border-light bg-white shadow-bib-glass py-1.5 overflow-hidden"
+                      >
+                        {item.items.map(sub => (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            aria-current={isLinkActive(sub.href) ? 'page' : undefined}
+                            onClick={() => setOpenDropdown(null)}
+                            className={`block px-4 py-2 text-bib-body transition-colors ${
+                              isLinkActive(sub.href)
+                                ? 'text-bib-teal font-medium bg-bib-teal/5'
+                                : 'text-bib-text-light-secondary hover:text-bib-text-light-primary hover:bg-bib-gray-bg'
+                            }`}
+                          >
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </nav>
       </header>
 
       {/* Menu mobile — drawer com navegação, identidade do município e logout */}
@@ -351,34 +476,44 @@ export function AppHeader({ programs, municipalityName, isAdmin, logoutAction }:
                     {municipalityName || 'Administrador'}
                   </p>
                   {isAdmin && (
-                    <span
-                      className="inline-block mt-0.5 text-[11px] font-medium px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: '#FE650920', color: '#FE6509' }}
-                    >
+                    <span className="inline-block mt-0.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-bib-orange/10 text-bib-orange">
                       Modo preview (admin)
                     </span>
                   )}
                 </div>
               </div>
-              <nav aria-label="Navegação principal" className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-                {navLinks.map(link => {
-                  const isActive = link.href === '/biblioteca' ? pathname === link.href : pathname?.startsWith(link.href);
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      aria-current={isActive ? 'page' : undefined}
-                      className="block px-3 py-2.5 rounded-bib-md text-sm transition-colors"
-                      style={{
-                        color: isActive ? '#072441' : 'rgb(7 36 65 / 64%)',
-                        background: isActive ? '#EBF6F7' : 'transparent',
-                        fontWeight: isActive ? 600 : 500,
-                      }}
-                    >
-                      {link.label}
-                    </Link>
-                  );
-                })}
+              <nav aria-label="Navegação principal" className="flex-1 px-3 py-3 overflow-y-auto">
+                {mobileGroups.map((group, i) => (
+                  <div key={group.heading ?? `group-${i}`} className={i > 0 ? 'mt-4' : ''}>
+                    {group.heading && (
+                      <p className="px-3 mb-1 text-bib-micro font-semibold uppercase tracking-bib-wide text-bib-text-light-muted">
+                        {group.heading}
+                      </p>
+                    )}
+                    <div className="space-y-0.5">
+                      {group.items.map(link => {
+                        const isActive = isLinkActive(link.href);
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-bib-md text-sm transition-colors ${
+                              isActive
+                                ? 'font-semibold text-bib-text-light-primary bg-bib-teal/8'
+                                : 'font-medium text-bib-text-light-secondary hover:bg-bib-gray-bg hover:text-bib-text-light-primary'
+                            }`}
+                          >
+                            {link.href === '/biblioteca/ia' && (
+                              <Sparkles size={13} aria-hidden="true" className="text-bib-teal" />
+                            )}
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </nav>
               <div className="p-3 border-t border-bib-border-light">
                 <form action={logoutAction}>
