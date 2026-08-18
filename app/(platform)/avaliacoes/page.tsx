@@ -199,13 +199,9 @@ export default function AvaliacoesPage() {
       })
       .then((server: RespostaEstudante[]) => {
         if (!Array.isArray(server)) throw new Error('Resposta inválida do servidor');
-        const local = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
-        const map = new Map<string, RespostaEstudante>();
-        local.forEach(r => map.set(r.id, r));
-        server.forEach(r => map.set(r.id, r));
-        const merged = Array.from(map.values());
-        storageSet('acelera_respostas_estudantes', merged);
-        setRespostasServidor(merged);
+        // Servidor é a fonte de verdade — substitui o localStorage pelo que veio do servidor
+        storageSet('acelera_respostas_estudantes', server);
+        setRespostasServidor(server);
       })
       .catch((e: Error) => {
         setFetchError(e.message);
