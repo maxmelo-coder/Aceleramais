@@ -214,7 +214,7 @@ export default function AvaliacoesPage() {
     ? respostasServidor
     : storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
   const respostasFiltradas = respostasPanel
-    ? todasRespostas.filter(r => r.assessmentId === respostasPanel.id)
+    ? todasRespostas.filter(r => r.assessmentId === respostasPanel.id || r.assessmentId?.startsWith(respostasPanel.id))
     : [];
   const mediaAcertos = respostasFiltradas.length > 0
     ? (respostasFiltradas.reduce((s, r) => s + r.acertos, 0) / respostasFiltradas.length).toFixed(1)
