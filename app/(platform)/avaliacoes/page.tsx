@@ -179,27 +179,42 @@ export default function AvaliacoesPage() {
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [saved, setSaved] = useState(false);
   const [respostasServidor, setRespostasServidor] = useState<RespostaEstudante[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fetchLoading, setFetchLoading] = useState(false);
 
   function authHeaders(): HeadersInit {
     const token = typeof window !== 'undefined' ? localStorage.getItem('eleva_token') : null;
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   }
 
-  // Carrega respostas do servidor na montagem e faz merge com localStorage
-  useEffect(() => {
-    fetch('/api/estudantes', { headers: authHeaders() }).then(r => r.json()).then((server: RespostaEstudante[]) => {
-      if (!Array.isArray(server)) return;
-      const local = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
-      const map = new Map<string, RespostaEstudante>();
-      local.forEach(r => map.set(r.id, r));
-      server.forEach(r => map.set(r.id, r));
-      const merged = Array.from(map.values());
-      storageSet('acelera_respostas_estudantes', merged);
-      setRespostasServidor(merged);
-    }).catch(() => {
-      setRespostasServidor(storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []));
-    });
-  }, []);
+  // Carrega respostas do servidor e faz merge com localStorage
+  function loadRespostas() {
+    setFetchLoading(true);
+    setFetchError(null);
+    fetch('/api/estudantes', { headers: authHeaders() })
+      .then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data?.error ?? `Erro ${r.status}`);
+        return data;
+      })
+      .then((server: RespostaEstudante[]) => {
+        if (!Array.isArray(server)) throw new Error('Resposta inválida do servidor');
+        const local = storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
+        const map = new Map<string, RespostaEstudante>();
+        local.forEach(r => map.set(r.id, r));
+        server.forEach(r => map.set(r.id, r));
+        const merged = Array.from(map.values());
+        storageSet('acelera_respostas_estudantes', merged);
+        setRespostasServidor(merged);
+      })
+      .catch((e: Error) => {
+        setFetchError(e.message);
+        setRespostasServidor(storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []));
+      })
+      .finally(() => setFetchLoading(false));
+  }
+
+  useEffect(() => { loadRespostas(); }, []);
 
   const publicadas = avaliacoes.filter(a => a.status === 'publicada').length;
   const aplicadas = avaliacoes.filter(a => a.status === 'aplicada').length;
@@ -533,8 +548,28 @@ export default function AvaliacoesPage() {
                 <h3 className="font-semibold text-gray-900 text-lg">Respostas dos estudantes</h3>
                 <p className="text-sm text-gray-500 mt-0.5">{respostasPanel.title}</p>
               </div>
-              <button onClick={() => setRespostasPanel(null)} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={20} /></button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadRespostas}
+                  disabled={fetchLoading}
+                  title="Recarregar respostas do servidor"
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    className={fetchLoading ? 'animate-spin' : ''}>
+                    <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                  </svg>
+                  {fetchLoading ? 'Carregando…' : 'Atualizar'}
+                </button>
+                <button onClick={() => setRespostasPanel(null)} className="text-gray-400 hover:text-gray-600 p-1"><IconX size={20} /></button>
+              </div>
             </div>
+            {fetchError && (
+              <div className="px-6 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2 text-xs text-red-700">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Erro ao buscar do servidor: <span className="font-medium">{fetchError}</span> — mostrando dados locais
+              </div>
+            )}
 
             {/* Resumo */}
             {respostasFiltradas.length > 0 && (
