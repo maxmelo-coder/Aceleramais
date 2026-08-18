@@ -148,6 +148,11 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
   function validateStep0() {
     const errs: Record<string, string> = {};
     if (!nome.trim()) errs.nome = 'Obrigatório';
+    if (!cidade.trim()) errs.cidade = 'Obrigatório';
+    if (!escola.trim()) errs.escola = 'Obrigatório';
+    if (!turma.trim()) errs.turma = 'Obrigatório';
+    if (!professor.trim()) errs.professor = 'Obrigatório';
+    if (!serie.trim()) errs.serie = 'Obrigatório';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -297,9 +302,8 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
               <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-10 bg-white" />
               <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full opacity-10 bg-white" />
               <div className="relative px-6 py-6 flex items-center gap-5">
-                <div className="flex-shrink-0 bg-white/15 rounded-2xl p-3 border border-white/20">
-                  <img src="/logo.png" alt="Acelera+" className="h-10 w-auto object-contain"
-                    style={{ filter: 'brightness(0) invert(1)' }} />
+                <div className="flex-shrink-0 bg-white rounded-2xl p-3 border border-white/20 shadow-md">
+                  <img src="/brand/logo-icon.png" alt="Eleva+" className="h-10 w-10 object-contain" />
                 </div>
                 <div>
                   <p className="text-white/70 text-[11px] font-semibold uppercase tracking-widest mb-1">Programa de Educação Empreendedora</p>
@@ -328,35 +332,45 @@ export default function AvaliacaoEstudantePage({ params }: { params: Promise<{ i
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-                    <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={cidade} onChange={e => setCidade(e.target.value)} placeholder="Sua cidade" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cidade *</label>
+                    <input className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30 ${errors.cidade ? 'border-red-300' : 'border-gray-200'}`}
+                      value={cidade} onChange={e => { setCidade(e.target.value); setErrors(p => ({...p, cidade: ''})); }} placeholder="Sua cidade" />
+                    {errors.cidade && <p className="text-xs text-red-500 mt-1">{errors.cidade}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Série</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Série *</label>
                     {assessmentMeta && assessmentMeta.serie !== '' ? (
                       <div className="w-full border border-gray-200 bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-700 font-medium">
                         {assessmentMeta.serie}
                       </div>
                     ) : (
-                      <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={serie} onChange={e => setSerie(e.target.value)}>
+                      <select className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30 ${errors.serie ? 'border-red-300' : 'border-gray-200'}`}
+                        value={serie} onChange={e => { setSerie(e.target.value); setErrors(p => ({...p, serie: ''})); }}>
                         <option value="">Selecione</option>
                         {(assessmentMeta ? ['8º ano', '9º ano'] : ['4º ano','5º ano','6º ano','7º ano','8º ano','9º ano']).map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     )}
+                    {errors.serie && <p className="text-xs text-red-500 mt-1">{errors.serie}</p>}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Escola</label>
-                  <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={escola} onChange={e => setEscola(e.target.value)} placeholder="Nome da escola" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Escola *</label>
+                  <input className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30 ${errors.escola ? 'border-red-300' : 'border-gray-200'}`}
+                    value={escola} onChange={e => { setEscola(e.target.value); setErrors(p => ({...p, escola: ''})); }} placeholder="Nome da escola" />
+                  {errors.escola && <p className="text-xs text-red-500 mt-1">{errors.escola}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Turma</label>
-                    <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={turma} onChange={e => setTurma(e.target.value)} placeholder="Ex: 5A" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Turma *</label>
+                    <input className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30 ${errors.turma ? 'border-red-300' : 'border-gray-200'}`}
+                      value={turma} onChange={e => { setTurma(e.target.value); setErrors(p => ({...p, turma: ''})); }} placeholder="Ex: 5A" />
+                    {errors.turma && <p className="text-xs text-red-500 mt-1">{errors.turma}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Professor</label>
-                    <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={professor} onChange={e => setProfessor(e.target.value)} placeholder="Nome do professor" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Professor *</label>
+                    <input className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8C99]/30 ${errors.professor ? 'border-red-300' : 'border-gray-200'}`}
+                      value={professor} onChange={e => { setProfessor(e.target.value); setErrors(p => ({...p, professor: ''})); }} placeholder="Nome do professor" />
+                    {errors.professor && <p className="text-xs text-red-500 mt-1">{errors.professor}</p>}
                   </div>
                 </div>
               </div>
