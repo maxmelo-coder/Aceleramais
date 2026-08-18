@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
-import { isAuthenticated } from '@/lib/verify-token';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
-  if (!isAuthenticated(req)) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-  }
-
+export async function GET(_req: NextRequest) {
   const token = process.env.GITHUB_STORAGE_TOKEN;
   const hasToken = !!token && token.length > 0;
 
