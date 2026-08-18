@@ -6,8 +6,8 @@ import type { BancoQuestoes } from '@/lib/banco-questoes';
 
 // Mapeamento de ID de avaliação → banco de questões e série pré-definida
 const ASSESSMENT_MAP: Record<string, { bancoId: string; serie: string; titulo: string }> = {
-  'diagnostico-6ano-negocios-2025':  { bancoId: 'bq-89-negocios', serie: '6º ano',  titulo: 'Módulo Negócios · 6º ano'  },
-  'diagnostico-7ano-negocios-2025':  { bancoId: 'bq-89-negocios', serie: '7º ano',  titulo: 'Módulo Negócios · 7º ano'  },
+  'diagnostico-6ano-negocios-2025':  { bancoId: 'bq-67-empreendedorismo', serie: '6º ano',  titulo: 'Empreendedorismo · 6º ano'  },
+  'diagnostico-7ano-negocios-2025':  { bancoId: 'bq-67-empreendedorismo', serie: '7º ano',  titulo: 'Empreendedorismo · 7º ano'  },
   'diagnostico-8ano-negocios-2025':  { bancoId: 'bq-89-negocios', serie: '8º ano',  titulo: 'Módulo Negócios · 8º ano'  },
   'diagnostico-9ano-negocios-2025':  { bancoId: 'bq-89-negocios', serie: '9º ano',  titulo: 'Módulo Negócios · 9º ano'  },
   // avaliação legada unificada
