@@ -42,11 +42,15 @@ export async function GET(_req: NextRequest) {
     const content = Buffer.from(file.content.replace(/\n/g, ''), 'base64').toString('utf-8');
     const data = JSON.parse(content);
 
+    const arr = Array.isArray(data) ? data as Array<{ assessmentId?: string; submittedAt?: string }> : [];
+    const assessmentIds = [...new Set(arr.map(r => r.assessmentId ?? 'sem-id'))];
+
     return NextResponse.json({
       ok: true,
       tokenLength: token.length,
-      totalRespostas: Array.isArray(data) ? data.length : 'não é array',
-      ultimaResposta: Array.isArray(data) && data.length > 0 ? data[data.length - 1]?.submittedAt : null,
+      totalRespostas: arr.length,
+      ultimaResposta: arr.length > 0 ? arr[arr.length - 1]?.submittedAt : null,
+      assessmentIds,
     });
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e), tokenLength: token.length });
