@@ -5,10 +5,9 @@ import { isAuthenticated } from '@/lib/verify-token';
 const FILE = 'data/estudantes.json';
 const MAX_PAYLOAD_BYTES = 64 * 1024;
 
-export async function GET(req: NextRequest) {
-  if (!isAuthenticated(req)) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-  }
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
     return NextResponse.json(await readAll(FILE));
   } catch (e) {
