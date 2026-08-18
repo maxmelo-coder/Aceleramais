@@ -214,7 +214,12 @@ export default function AvaliacoesPage() {
       .finally(() => setFetchLoading(false));
   }
 
-  useEffect(() => { loadRespostas(); }, []);
+  // Carrega na montagem e faz polling a cada 30s para sincronização em tempo real
+  useEffect(() => {
+    loadRespostas();
+    const interval = setInterval(loadRespostas, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const publicadas = avaliacoes.filter(a => a.status === 'publicada').length;
   const aplicadas = avaliacoes.filter(a => a.status === 'aplicada').length;
@@ -252,19 +257,63 @@ export default function AvaliacoesPage() {
     setForm({ ...form, [key]: value } as typeof form);
   }
 
-  // Respostas panel data — usa dados do servidor (já mergeado com localStorage)
+  // Respostas — usa dados do servidor (já mergeado com localStorage)
   const todasRespostas = respostasServidor.length > 0
     ? respostasServidor
     : storageGet<RespostaEstudante[]>('acelera_respostas_estudantes', []);
-  const respostasFiltradas = respostasPanel
-    ? todasRespostas.filter(r => r.assessmentId === respostasPanel.id || r.assessmentId?.startsWith(respostasPanel.id))
-    : [];
+
+  // Helper: filtra respostas por id de avaliação (aceita sufixo extra)
+  function respostasDe(id: string) {
+    return todasRespostas.filter(r => r.assessmentId === id || r.assessmentId?.startsWith(id));
+  }
+
+  const respostasFiltradas = respostasPanel ? respostasDe(respostasPanel.id) : [];
   const mediaAcertos = respostasFiltradas.length > 0
     ? (respostasFiltradas.reduce((s, r) => s + r.acertos, 0) / respostasFiltradas.length).toFixed(1)
     : '—';
   const mediaNota = respostasFiltradas.length > 0
     ? (respostasFiltradas.reduce((s, r) => s + r.score, 0) / respostasFiltradas.length).toFixed(1)
     : '—';
+
+  // Dados para aba Resultados
+  const totalRespostas = todasRespostas.length;
+  const mediaGeralNota = totalRespostas > 0
+    ? (todasRespostas.reduce((s, r) => s + r.score, 0) / totalRespostas).toFixed(1)
+    : '—';
+  const mediaGeralNPS = totalRespostas > 0
+    ? (todasRespostas.filter(r => r.nps >= 0).reduce((s, r) => s + r.nps, 0) / Math.max(1, todasRespostas.filter(r => r.nps >= 0).length)).toFixed(1)
+    : '—';
+
+  // Agrupamento por escola
+  const porEscola = todasRespostas.reduce<Record<string, { count: number; scoreSum: number }>>((acc, r) => {
+    const k = r.escola || 'Não informada';
+    if (!acc[k]) acc[k] = { count: 0, scoreSum: 0 };
+    acc[k].count++;
+    acc[k].scoreSum += r.score;
+    return acc;
+  }, {});
+
+  function exportRelatorioCSV() {
+    const headers = ['Avaliação','Nome','Escola','Turma','Série','Professor','Acertos','Nota','NPS','Satisfação','Data'];
+    const lines = todasRespostas.map(r => {
+      const av = avaliacoes.find(a => r.assessmentId === a.id || r.assessmentId?.startsWith(a.id));
+      return [
+        av?.title ?? r.assessmentId,
+        r.studentName, r.escola, r.turma, r.serie, r.professor,
+        r.acertos, r.score, r.nps >= 0 ? r.nps : '',
+        r.satisfacao > 0 ? r.satisfacao : '',
+        new Date(r.submittedAt).toLocaleDateString('pt-BR'),
+      ].join(';');
+    });
+    const csv = [headers.join(';'), ...lines].join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-avaliacoes-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -399,7 +448,12 @@ export default function AvaliacoesPage() {
                           <td className="px-6 py-4 text-center">
                             <Badge label={sc.label} variant={sc.variant} />
                           </td>
-                          <td className="px-6 py-4 text-center text-gray-700">{a.respondents}</td>
+                          <td className="px-6 py-4 text-center">
+                            {(() => {
+                              const cnt = respostasDe(a.id).length;
+                              return <span className={`font-semibold ${cnt > 0 ? 'text-[#F48B1B]' : 'text-gray-400'}`}>{cnt}</span>;
+                            })()}
+                          </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-center gap-2">
                               <button onClick={() => openEdit(a)} title="Editar" className="p-1.5 rounded-lg text-[#F48B1B] hover:bg-orange-50 transition-colors">
@@ -446,10 +500,164 @@ export default function AvaliacoesPage() {
       )}
 
       {tab === 'Resultados' && (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-gray-100">
-          <IconEval size={40} className="text-gray-300 mb-3" />
-          <p className="text-gray-500 font-medium">Nenhum resultado disponível</p>
-          <p className="text-gray-400 text-sm mt-1 max-w-xs">Os resultados aparecerão aqui após as avaliações serem aplicadas e respondidas pelos estudantes.</p>
+        <div className="space-y-6">
+          {totalRespostas === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-gray-100">
+              <IconEval size={40} className="text-gray-300 mb-3" />
+              <p className="text-gray-500 font-medium">Nenhum resultado disponível</p>
+              <p className="text-gray-400 text-sm mt-1 max-w-xs">Os resultados aparecerão aqui após as avaliações serem respondidas pelos estudantes.</p>
+            </div>
+          ) : (
+            <>
+              {/* Header com export */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Relatório Geral</h2>
+                  <p className="text-sm text-gray-500">
+                    {fetchLoading && <span className="inline-flex items-center gap-1 text-[#2E8C99]">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                      Sincronizando…
+                    </span>}
+                    {!fetchLoading && `Atualizado agora · ${totalRespostas} resposta${totalRespostas !== 1 ? 's' : ''}`}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={loadRespostas} disabled={fetchLoading}
+                    className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={fetchLoading ? 'animate-spin' : ''}>
+                      <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    Atualizar
+                  </button>
+                  <button onClick={exportRelatorioCSV}
+                    className="flex items-center gap-2 bg-[#2E8C99] hover:bg-[#256e78] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Exportar Relatório CSV
+                  </button>
+                </div>
+              </div>
+
+              {/* Cards de resumo */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center shadow-sm">
+                  <p className="text-3xl font-extrabold text-[#F48B1B]">{totalRespostas}</p>
+                  <p className="text-sm text-gray-500 mt-1">Total de respostas</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center shadow-sm">
+                  <p className="text-3xl font-extrabold text-[#2E8C99]">{mediaGeralNota}</p>
+                  <p className="text-sm text-gray-500 mt-1">Nota média geral</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center shadow-sm">
+                  <p className="text-3xl font-extrabold text-green-600">{mediaGeralNPS}</p>
+                  <p className="text-sm text-gray-500 mt-1">NPS médio</p>
+                </div>
+              </div>
+
+              {/* Por avaliação */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100">
+                  <h3 className="font-semibold text-gray-900">Resultados por avaliação</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left font-medium">Avaliação</th>
+                        <th className="px-6 py-3 text-left font-medium">Série</th>
+                        <th className="px-6 py-3 text-center font-medium">Respostas</th>
+                        <th className="px-6 py-3 text-center font-medium">Nota Média</th>
+                        <th className="px-6 py-3 text-center font-medium">Acertos Médios</th>
+                        <th className="px-6 py-3 text-center font-medium">Desempenho</th>
+                        <th className="px-6 py-3 text-center font-medium">Detalhes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {avaliacoes.map(a => {
+                        const rows = respostasDe(a.id);
+                        if (rows.length === 0) return null;
+                        const nota = (rows.reduce((s, r) => s + r.score, 0) / rows.length).toFixed(1);
+                        const acertos = (rows.reduce((s, r) => s + r.acertos, 0) / rows.length).toFixed(1);
+                        const pct = parseFloat(nota) * 10;
+                        const cor = parseFloat(nota) >= 7 ? 'bg-green-500' : parseFloat(nota) >= 5 ? 'bg-yellow-400' : 'bg-red-400';
+                        return (
+                          <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 font-medium text-gray-900 max-w-xs">
+                              <p className="truncate">{a.title}</p>
+                            </td>
+                            <td className="px-6 py-4 text-gray-600">{a.serie}</td>
+                            <td className="px-6 py-4 text-center font-bold text-[#F48B1B]">{rows.length}</td>
+                            <td className="px-6 py-4 text-center font-bold text-gray-900">{nota}</td>
+                            <td className="px-6 py-4 text-center text-gray-700">{acertos}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full ${cor}`} style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="text-xs font-semibold text-gray-600 w-8 text-right">{pct.toFixed(0)}%</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <button onClick={() => { setRespostasPanel(a); }}
+                                className="p-1.5 rounded-lg text-[#2E8C99] hover:bg-teal-50 transition-colors" title="Ver respostas">
+                                <IconEye size={15} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Por escola */}
+              {Object.keys(porEscola).length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100">
+                    <h3 className="font-semibold text-gray-900">Resultados por escola</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left font-medium">Escola</th>
+                          <th className="px-6 py-3 text-center font-medium">Alunos</th>
+                          <th className="px-6 py-3 text-center font-medium">Nota Média</th>
+                          <th className="px-6 py-3 text-center font-medium">Desempenho</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {Object.entries(porEscola)
+                          .sort((a, b) => b[1].count - a[1].count)
+                          .map(([escola, { count, scoreSum }]) => {
+                            const nota = (scoreSum / count).toFixed(1);
+                            const pct = parseFloat(nota) * 10;
+                            const cor = parseFloat(nota) >= 7 ? 'bg-green-500' : parseFloat(nota) >= 5 ? 'bg-yellow-400' : 'bg-red-400';
+                            return (
+                              <tr key={escola} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4 font-medium text-gray-900">{escola}</td>
+                                <td className="px-6 py-4 text-center font-bold text-[#F48B1B]">{count}</td>
+                                <td className="px-6 py-4 text-center font-bold text-gray-900">{nota}</td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                      <div className={`h-full rounded-full ${cor}`} style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <span className="text-xs font-semibold text-gray-600 w-8 text-right">{pct.toFixed(0)}%</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
